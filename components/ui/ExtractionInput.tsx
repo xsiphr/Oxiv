@@ -5,6 +5,7 @@ import { Clipboard, X, CornerDownLeft } from 'lucide-react';
 import { PlatformBadges } from './PlatformBadges';
 import { detectPlatform } from '@/lib/platformRegistry';
 import { Platform } from '@/types';
+import { useI18n } from '@/lib/i18n';
 
 interface ExtractionInputProps {
   onExtract: (url: string) => void;
@@ -15,6 +16,7 @@ interface ExtractionInputProps {
 }
 
 export function ExtractionInput({ onExtract, isLoading, externalError, resetSignal, externalUrl }: ExtractionInputProps) {
+  const { t } = useI18n();
   const [url, setUrl] = useState('');
   const [detectedPlatform, setDetectedPlatform] = useState<Platform>('unknown');
   const [error, setError] = useState<string | null>(null);
@@ -131,7 +133,7 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
     e.preventDefault();
     const clean = sanitizeUrl(url);
     if (!clean) {
-      setError('Please provide a valid social media URL.');
+      setError(t.hero.errorInvalid);
       inputRef.current?.focus();
       return;
     }
@@ -142,8 +144,8 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
   return (
     <div className="w-full flex flex-col items-center">
       {/* Editorial Headline */}
-      <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[var(--colors-ink)] text-center mb-8 sm:mb-10 max-w-4xl leading-[1.08]">
-        Extract raw media effortlessly.
+      <h1 className="font-display text-5xl sm:text-6xl md:text-7xl rtl:text-5xl rtl:sm:text-6xl rtl:md:text-7xl rtl:lg:text-[5.25rem] font-bold tracking-tight text-[var(--colors-ink)] text-center mb-8 sm:mb-10 max-w-4xl rtl:max-w-2xl lg:rtl:max-w-3xl leading-[1.08] rtl:leading-[1.22]">
+        {t.hero.title}
       </h1>
 
       {/* Form Container */}
@@ -157,7 +159,7 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
               value={url}
               onChange={handleInputChange}
               onPaste={handleNativePaste}
-              placeholder="Paste link here..."
+              placeholder={t.hero.placeholder}
               readOnly={isLoading}
               className="font-mono text-xs sm:text-sm bg-transparent outline-none flex-1 min-w-0 text-[var(--colors-ink)] placeholder:text-[var(--colors-muted)] px-2.5 sm:px-3 disabled:opacity-50 read-only:opacity-60"
             />
@@ -181,7 +183,7 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
                 className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-body font-semibold text-[var(--colors-ink)] p-2 sm:px-3.5 sm:py-2 rounded-lg bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] hover:bg-[var(--colors-surface-card)] transition-all cursor-pointer shadow-xs shrink-0 active:scale-95"
               >
                 <Clipboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--colors-muted)] shrink-0" />
-                <span className="hidden sm:inline">Paste</span>
+                <span className="hidden sm:inline">{t.hero.pasteBtn}</span>
               </button>
             )}
 
@@ -192,8 +194,8 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
               aria-label="Extract media"
               className="bg-[var(--colors-ink)] text-[var(--colors-canvas)] hover:opacity-90 active:scale-95 p-2 sm:px-5 sm:py-2.5 rounded-lg font-body font-semibold text-xs sm:text-sm transition-all shadow-xs disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-1.5 sm:gap-2 shrink-0 cursor-pointer"
             >
-              <span className="hidden sm:inline">{isLoading ? 'Extracting...' : 'Extract'}</span>
-              <CornerDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-80 shrink-0" />
+              <span className="hidden sm:inline order-1 rtl:order-2">{isLoading ? t.hero.extracting : t.hero.extractBtn}</span>
+              <CornerDownLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-80 shrink-0 order-2 rtl:order-1" />
             </button>
           </div>
         </form>

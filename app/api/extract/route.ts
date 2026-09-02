@@ -5,6 +5,8 @@ import { extractPinterest } from '@/lib/extractors/pinterest';
 import { ExtractionPipelineError } from '@/lib/extractors/errors';
 import { ApiResponse, MediaResult } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 async function handleExtraction(url: string, lookup: LookupResult): Promise<NextResponse<ApiResponse>> {
   // Tier 3: Invalid URL or completely unrecognized domain
   if (lookup.status === 'invalid' || lookup.status === 'no-match') {

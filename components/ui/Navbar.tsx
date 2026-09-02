@@ -3,9 +3,21 @@
 import React, { useEffect, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { SiGithub } from 'react-icons/si';
+import { useI18n } from '@/lib/i18n';
 
 export function Navbar() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('oxiv_theme') as 'dark' | 'light' | null;
+        if (saved === 'light' || saved === 'dark') return saved;
+      } catch {
+        // ignore
+      }
+    }
+    return 'dark';
+  });
+  const { locale, toggleLocale, t } = useI18n();
 
   useEffect(() => {
     try {
@@ -14,6 +26,7 @@ export function Navbar() {
       const initialTheme = saved === 'light' ? 'light' : 'dark';
       setTheme(initialTheme);
       document.documentElement.setAttribute('data-theme', initialTheme);
+      document.cookie = `oxiv_theme=${initialTheme}; path=/; max-age=31536000; SameSite=Lax`;
     } catch {
       setTheme('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -26,6 +39,7 @@ export function Navbar() {
     document.documentElement.setAttribute('data-theme', nextTheme);
     try {
       localStorage.setItem('oxiv_theme', nextTheme);
+      document.cookie = `oxiv_theme=${nextTheme}; path=/; max-age=31536000; SameSite=Lax`;
     } catch {
       // Safe fallback if localStorage is blocked
     }
@@ -41,7 +55,7 @@ export function Navbar() {
           </span>
         </a>
 
-        {/* Minimal Actions (Enlarged Icons) */}
+        {/* Minimal Actions (GitHub, Theme Toggle, Language Switcher) */}
         <div className="flex items-center gap-2 sm:gap-3 text-[var(--colors-muted)]">
           <a
             href="https://github.com/xsiphr/Oxiv"
@@ -65,6 +79,18 @@ export function Navbar() {
             ) : (
               <Moon className="w-5 h-5" />
             )}
+          </button>
+
+          {/* Language Switcher Button (Far right without border, icon style) */}
+          <button
+            type="button"
+            onClick={toggleLocale}
+            className="hover:text-[var(--colors-ink)] transition-colors p-2 rounded-xl hover:bg-[var(--colors-surface-card)] cursor-pointer select-none flex items-center justify-center w-9 h-9"
+            aria-label="Toggle language (English / Arabic)"
+          >
+            <span className="font-mono text-xs font-semibold uppercase leading-none">
+              {t.nav.langToggle}
+            </span>
           </button>
         </div>
       </div>

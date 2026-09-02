@@ -4,6 +4,7 @@ import React from 'react';
 import { SiTiktok, SiInstagram, SiFacebook, SiPinterest, SiX, SiYoutube } from 'react-icons/si';
 
 import { PLATFORM_REGISTRY } from '@/lib/platformRegistry';
+import { useI18n } from '@/lib/i18n';
 
 function getPlatformIcon(id: string) {
   switch (id) {
@@ -25,6 +26,7 @@ function getPlatformIcon(id: string) {
 }
 
 export function SupportedPlatformsSection() {
+  const { t } = useI18n();
   const platforms = PLATFORM_REGISTRY.filter((p) => p.status !== 'unsupported');
 
   return (
@@ -33,10 +35,10 @@ export function SupportedPlatformsSection() {
         {/* Section Header */}
         <div className="space-y-2">
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--colors-ink)] tracking-tight">
-            Supported platforms.
+            {t.platforms.title}
           </h2>
           <p className="font-body text-xs sm:text-sm text-[var(--colors-muted)] max-w-2xl">
-            Every format Oxiv can pull, per platform — no watermarks, no re-encoding.
+            {t.platforms.subtitle}
           </p>
         </div>
 
@@ -45,7 +47,11 @@ export function SupportedPlatformsSection() {
           {platforms.map((platform) => {
             const isLive = platform.status === 'live';
             const isNext = platform.status === 'next';
-            const statusLabel = platform.status.toUpperCase();
+            const statusLabel = isLive
+              ? t.platforms.live
+              : isNext
+              ? t.platforms.next
+              : t.platforms.planned;
 
             return (
               <div
@@ -74,12 +80,12 @@ export function SupportedPlatformsSection() {
 
                   <div>
                     <h3 className="font-display font-bold text-lg text-[var(--colors-ink)]">
-                      {platform.name}
+                      {t.platforms.items?.[platform.id]?.name || platform.name}
                     </h3>
                   </div>
 
                   <p className="font-body text-xs text-[var(--colors-body)] leading-relaxed pt-1">
-                    {platform.formats}
+                    {t.platforms.items?.[platform.id]?.formats || platform.formats}
                   </p>
                 </div>
               </div>
@@ -90,10 +96,10 @@ export function SupportedPlatformsSection() {
         {/* Supported Link Formats Reference Code Block with Sub-heading */}
         <div className="space-y-3 pt-4 border-t border-dashed border-[var(--colors-hairline)]">
           <h3 className="font-display font-bold text-lg text-[var(--colors-ink)]">
-            Supported link formats.
+            {t.platforms.formatsTitle}
           </h3>
 
-          <div className="rounded-xl border border-[var(--colors-hairline)] bg-[var(--colors-surface-card)] p-4 sm:p-5 font-mono text-xs shadow-xs">
+          <div dir="ltr" className="rounded-xl border border-[var(--colors-hairline)] bg-[var(--colors-surface-card)] p-4 sm:p-5 font-mono text-xs shadow-xs text-left">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6 divide-y md:divide-y-0 md:divide-x divide-dashed divide-[var(--colors-hairline)]">
               {/* Column A (4 lines) */}
               <div className="space-y-2 text-[var(--colors-body)]">

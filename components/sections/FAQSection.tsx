@@ -2,54 +2,10 @@
 
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-
-interface FAQItem {
-  id: string;
-  question: string;
-  answer: string;
-  technicalNote?: string;
-}
-
-const FAQ_ITEMS: FAQItem[] = [
-  {
-    id: 'faq-1',
-    question: 'How does Oxiv strip watermarks without re-encoding?',
-    answer:
-      "Oxiv requests the platform's direct media URL before any client-side watermark overlay is applied, rather than downloading a watermarked video and reprocessing it.",
-    technicalNote: 'Original file quality — no re-encoding step involved.',
-  },
-  {
-    id: 'faq-2',
-    question: 'Are downloaded assets stored on any intermediate server?',
-    answer:
-      'No. Oxiv operates under a strict stateless, zero-retention architecture. Media chunks are streamed on-the-fly directly to the client browser. No video, audio, or metadata is ever written to intermediate disk storage or databases.',
-    technicalNote: 'Zero telemetry, zero user logging.',
-  },
-  {
-    id: 'faq-3',
-    question: 'How does downloading work without CORS errors?',
-    answer:
-      "Media requests are fetched through Oxiv's backend route (/api/download), which retrieves the file server-side and streams it to your browser with the correct attachment headers, avoiding browser cross-origin blocks.",
-    technicalNote: 'Direct browser download with clean filename attachment.',
-  },
-  {
-    id: 'faq-4',
-    question: 'Where does the "Recents" list live?',
-    answer:
-      'The Recents list you see on the homepage is stored entirely in your browser\'s local storage — it never touches Oxiv\'s servers. Nothing is written to any database, and no extraction history is logged, tracked, or associated with you server-side. Clearing your browser data or using a different device clears it too.',
-    technicalNote: 'Client-side only. Zero server-side retention, unchanged.',
-  },
-  {
-    id: 'faq-5',
-    question: 'Why does my browser prompt for clipboard permission?',
-    answer:
-      'Browsers enforce differing security boundaries on the asynchronous Clipboard API (navigator.clipboard.readText()). While Chromium-based engines allow persistent domain-level permissions, Gecko-based engines (Firefox desktop and mobile) require an explicit user confirmation prompt per read event to mitigate unauthorized clipboard access by third-party scripts.',
-    technicalNote:
-      'Enforced browser-level security sandbox. Standard keyboard paste (Ctrl+V / long-press) remains direct.',
-  },
-];
+import { useI18n } from '@/lib/i18n';
 
 export function FAQSection() {
+  const { t } = useI18n();
   const [openId, setOpenId] = useState<string | null>('faq-1');
 
   const toggleFAQ = (id: string) => {
@@ -62,16 +18,16 @@ export function FAQSection() {
         {/* Section Header */}
         <div className="space-y-2">
           <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--colors-ink)] tracking-tight">
-            Frequently asked questions.
+            {t.faq.title}
           </h2>
           <p className="font-body text-xs sm:text-sm text-[var(--colors-muted)] max-w-xl">
-            Technical specifications, extraction mechanics, and architecture privacy policies.
+            {t.faq.subtitle}
           </p>
         </div>
 
         {/* Minimal Airy Rows separated by dashed hairlines */}
         <div className="border-y border-dashed border-[var(--colors-hairline)] divide-y divide-dashed divide-[var(--colors-hairline)]">
-          {FAQ_ITEMS.map((item, idx) => {
+          {t.faq.items.map((item, idx) => {
             const isOpen = openId === item.id;
             return (
               <div key={item.id} className="transition-colors">
@@ -80,7 +36,7 @@ export function FAQSection() {
                   type="button"
                   onClick={() => toggleFAQ(item.id)}
                   aria-expanded={isOpen}
-                  className="w-full py-5 sm:py-6 text-left flex items-center justify-between gap-4 transition-colors cursor-pointer group select-none"
+                  className="w-full py-5 sm:py-6 text-start flex items-center justify-between gap-4 transition-colors cursor-pointer group select-none"
                 >
                   <div className="flex items-center gap-4 sm:gap-6 min-w-0">
                     <span className="font-mono text-sm sm:text-base text-[var(--colors-muted)] shrink-0 select-none">
@@ -107,7 +63,7 @@ export function FAQSection() {
                   }`}
                 >
                   <div className="min-h-0 overflow-hidden">
-                    <div className="pb-6 sm:pb-7 pl-8 sm:pl-10">
+                    <div className="pb-6 sm:pb-7 ps-8 sm:ps-10">
                       <p className="font-body text-sm text-[var(--colors-body)] leading-relaxed">
                         {item.answer}
                         {item.technicalNote && (
@@ -129,3 +85,4 @@ export function FAQSection() {
 }
 
 export default FAQSection;
+

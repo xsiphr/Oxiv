@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, History } from 'lucide-react';
 import { SiTiktok, SiInstagram, SiPinterest, SiX, SiFacebook, SiYoutube } from 'react-icons/si';
 import { Platform, RecentExtraction } from '@/types';
+import { useI18n } from '@/lib/i18n';
 
 interface RecentExtractionsProps {
   recents: RecentExtraction[];
@@ -20,6 +21,7 @@ export function RecentExtractions({
   onRemove,
   onClear,
 }: RecentExtractionsProps) {
+  const { t } = useI18n();
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!recents || recents.length === 0) {
@@ -32,17 +34,17 @@ export function RecentExtractions({
   const renderPlatformIcon = (platform: Platform) => {
     switch (platform) {
       case 'tiktok':
-        return <SiTiktok className="w-3 h-3 shrink-0" />;
+        return <SiTiktok className="w-3.5 h-3.5 shrink-0" />;
       case 'instagram':
-        return <SiInstagram className="w-3 h-3 shrink-0" />;
+        return <SiInstagram className="w-3.5 h-3.5 shrink-0" />;
       case 'facebook':
-        return <SiFacebook className="w-3 h-3 shrink-0" />;
+        return <SiFacebook className="w-3.5 h-3.5 shrink-0" />;
       case 'pinterest':
-        return <SiPinterest className="w-3 h-3 shrink-0" />;
+        return <SiPinterest className="w-3.5 h-3.5 shrink-0" />;
       case 'x':
-        return <SiX className="w-3 h-3 shrink-0" />;
+        return <SiX className="w-3.5 h-3.5 shrink-0" />;
       case 'youtube':
-        return <SiYoutube className="w-3 h-3 shrink-0" />;
+        return <SiYoutube className="w-3.5 h-3.5 shrink-0" />;
       default:
         return null;
     }
@@ -56,9 +58,9 @@ export function RecentExtractions({
           <div className="flex items-center gap-1.5 text-[var(--colors-muted)]">
             <History className="w-3.5 h-3.5" />
             <span className="font-display font-semibold text-sm tracking-tight text-[var(--colors-ink)]">
-              Recents
+              {t.recents.title}
             </span>
-            <span className="font-mono text-[10px] text-[var(--colors-muted)] ml-1 px-1.5 py-0.2 rounded bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)]">
+            <span className="font-mono text-[10px] text-[var(--colors-muted)] mx-1 px-1.5 py-0.2 rounded bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)]">
               {recents.length}
             </span>
           </div>
@@ -68,7 +70,7 @@ export function RecentExtractions({
             onClick={onClear}
             className="font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] transition-colors cursor-pointer px-1.5 py-0.5 rounded hover:bg-[var(--colors-surface-elevated)]"
           >
-            [Clear]
+            [{t.recents.clear}]
           </button>
         </div>
 
@@ -133,7 +135,7 @@ export function RecentExtractions({
               onClick={() => setIsExpanded((prev) => !prev)}
               className="font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] transition-colors cursor-pointer px-2 py-1 rounded hover:bg-[var(--colors-surface-elevated)]"
             >
-              {isExpanded ? '[- collapse]' : `[+${remainingCount} more]`}
+              {isExpanded ? `[- ${t.recents.collapse}]` : `[+${remainingCount} ${t.recents.more}]`}
             </button>
           </div>
         )}

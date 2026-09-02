@@ -24,7 +24,7 @@ export function TerminalStream({ steps, url, platform: propPlatform }: TerminalS
   const platformFlag = detected !== 'unknown' ? detected : 'media';
 
   return (
-    <div className="w-full max-w-2xl mx-auto rounded-xl bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] overflow-hidden shadow-xs transition-all duration-300">
+    <div dir="ltr" className="w-full max-w-2xl mx-auto rounded-xl bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] overflow-hidden shadow-xs transition-all duration-300 text-left">
       {/* 1. Top Bar */}
       <div className="px-4 py-2.5 bg-[var(--colors-surface-elevated)] border-b border-[var(--colors-hairline)] font-mono text-xs text-[var(--colors-ink)] flex items-center">
         <div className="flex items-center gap-2">

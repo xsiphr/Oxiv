@@ -71,10 +71,10 @@ export function PageSkeleton() {
           <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)]">
             <div
               style={{ animationDelay: '140ms' }}
-              className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-dashed divide-[var(--colors-hairline)] animate-content-cascade"
+              className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 divide-dashed divide-[var(--colors-hairline)] animate-content-cascade"
             >
-              {[1, 2, 3].map((cell) => (
-                <div key={cell} className="p-6 sm:p-8 flex flex-col gap-3">
+              {[1, 2, 3].map((cell, idx) => (
+                <div key={cell} className={`p-6 sm:p-8 flex flex-col gap-3 ${idx > 0 ? 'md:border-s md:border-dashed md:border-[var(--colors-hairline)]' : ''}`}>
                   <div className="w-8 h-8 rounded-lg bg-[var(--colors-surface-elevated)] animate-skeleton mb-1" />
                   <div className="w-20 h-7 rounded bg-[var(--colors-surface-elevated)] animate-skeleton" />
                   <div className="w-40 h-4 rounded bg-[var(--colors-surface-elevated)] animate-skeleton" />

@@ -5,6 +5,7 @@ import { Platform } from '@/types';
 import { SiTiktok, SiInstagram, SiPinterest, SiX, SiFacebook, SiYoutube } from 'react-icons/si';
 
 import { PLATFORM_REGISTRY, PlatformEntry } from '@/lib/platformRegistry';
+import { useI18n } from '@/lib/i18n';
 
 interface PlatformBadgesProps {
   activePlatform: Platform;
@@ -19,6 +20,8 @@ const SECONDARY_PLATFORMS = ['x', 'youtube']
   .filter((p): p is PlatformEntry => Boolean(p));
 
 export function PlatformBadges({ activePlatform }: PlatformBadgesProps) {
+  const { t } = useI18n();
+
   const getPlatformIcon = (platform: Platform) => {
     switch (platform) {
       case 'tiktok':
@@ -57,7 +60,7 @@ export function PlatformBadges({ activePlatform }: PlatformBadgesProps) {
         >
           {getPlatformIcon(platform)}
         </span>
-        <span>{item.name}</span>
+        <span>{t.platforms.items?.[item.id]?.name || item.name}</span>
         {isMatched && <span className="text-[9px] opacity-85">●</span>}
       </div>
     );

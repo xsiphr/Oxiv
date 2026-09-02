@@ -2,52 +2,50 @@
 
 import React from 'react';
 import { Cpu, ShieldCheck, HardDriveDownload } from 'lucide-react';
-
-interface MetricItem {
-  icon: React.ReactNode;
-  value: string;
-  label: string;
-  caption: string;
-}
-
-const METRICS: MetricItem[] = [
-  {
-    icon: <Cpu className="w-7 h-7" strokeWidth={1.5} />,
-    value: '100%',
-    label: 'Lossless',
-    caption: 'No transcoding or quality loss.',
-  },
-  {
-    icon: <ShieldCheck className="w-7 h-7" strokeWidth={1.5} />,
-    value: '0',
-    label: 'Watermarks',
-    caption: 'No tracking tags or overlays.',
-  },
-  {
-    icon: <HardDriveDownload className="w-7 h-7" strokeWidth={1.5} />,
-    value: '0',
-    label: 'Server Logs',
-    caption: 'Nothing stored, nothing retained.',
-  },
-];
+import { useI18n } from '@/lib/i18n';
 
 export function MetricsGrid() {
+  const { t } = useI18n();
+
+  const metrics = [
+    {
+      icon: <Cpu className="w-7 h-7" strokeWidth={1.5} />,
+      value: t.metrics.col1.val,
+      label: t.metrics.col1.label,
+      caption: t.metrics.col1.caption,
+    },
+    {
+      icon: <ShieldCheck className="w-7 h-7" strokeWidth={1.5} />,
+      value: t.metrics.col2.val,
+      label: t.metrics.col2.label,
+      caption: t.metrics.col2.caption,
+    },
+    {
+      icon: <HardDriveDownload className="w-7 h-7" strokeWidth={1.5} />,
+      value: t.metrics.col3.val,
+      label: t.metrics.col3.label,
+      caption: t.metrics.col3.caption,
+    },
+  ];
+
   return (
     <section className="w-full border-y border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas)] transition-colors">
       <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)]">
         {/* 3-Column Grid with Blueprint Hover Effects */}
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-dashed divide-[var(--colors-hairline)]">
-          {METRICS.map((metric, idx) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 divide-dashed divide-[var(--colors-hairline)]">
+          {metrics.map((metric, idx) => (
             <div
               key={idx}
-              className="p-6 sm:p-8 hover:bg-black/[0.04] dark:hover:bg-white/[0.035] transition-all duration-300 flex flex-col items-start justify-center group cursor-default select-none"
+              className={`p-6 sm:p-8 hover:bg-black/[0.04] dark:hover:bg-white/[0.035] transition-all duration-300 flex flex-col items-start justify-center group cursor-default select-none ${
+                idx > 0 ? 'md:border-s md:border-dashed md:border-[var(--colors-hairline)]' : ''
+              }`}
             >
               {/* Floating Icon with Blueprint Hover Transition */}
               <div className="text-[var(--colors-muted)] group-hover:text-[var(--colors-ink)] group-hover:-translate-y-0.5 transition-all duration-300 mb-3.5">
                 {metric.icon}
               </div>
 
-              {/* 1. Stat Number */}
+              {/* 1. Stat Number (Western Arabic numerals in font-mono) */}
               <div className="font-mono font-bold text-4xl sm:text-5xl text-[var(--colors-ink)] tracking-tight transition-all">
                 {metric.value}
               </div>
@@ -68,3 +66,6 @@ export function MetricsGrid() {
     </section>
   );
 }
+
+export default MetricsGrid;
+

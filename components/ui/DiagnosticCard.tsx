@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { TriangleAlert, ArrowLeft, RefreshCw } from 'lucide-react';
 import { ExtractionError } from '@/types';
+import { useI18n } from '@/lib/i18n';
 
 interface DiagnosticCardProps {
   error: ExtractionError;
@@ -11,6 +12,7 @@ interface DiagnosticCardProps {
 }
 
 export function DiagnosticCard({ error, onReset, onRetry }: DiagnosticCardProps) {
+  const { t } = useI18n();
   const [retryCooldown, setRetryCooldown] = useState(false);
 
   // 2s Cooldown protection for rate-limited retries
@@ -41,50 +43,40 @@ export function DiagnosticCard({ error, onReset, onRetry }: DiagnosticCardProps)
     switch (error.code) {
       case 'PIPELINE_PENDING':
         return {
-          title: 'Not Yet Supported',
+          title: t.diagnostic.titles.notYetSupported,
           description:
-            error.message ||
-            `${error.platformName || 'This platform'} support is in active deployment.`,
+            error.message || t.diagnostic.descriptions.pipelinePending(error.platformName),
         };
       case 'UNSUPPORTED_PLATFORM':
         return {
-          title: 'Not Yet Supported',
+          title: t.diagnostic.titles.notYetSupported,
           description:
-            error.message ||
-            `Oxiv doesn't support ${error.platformName || 'this platform'} links.`,
+            error.message || t.diagnostic.descriptions.unsupportedPlatform(error.platformName),
         };
       case 'INVALID_URL':
         return {
-          title: 'Unrecognized Link',
-          description:
-            error.message ||
-            "This doesn't look like a valid link. Check the URL and try again.",
+          title: t.diagnostic.titles.unrecognizedLink,
+          description: error.message || t.diagnostic.descriptions.invalidUrl,
         };
       case 'MEDIA_UNREACHABLE':
         return {
-          title: 'Media Unreachable',
-          description:
-            error.message ||
-            'This post is private, deleted, or restricted by the platform.',
+          title: t.diagnostic.titles.mediaUnreachable,
+          description: error.message || t.diagnostic.descriptions.mediaUnreachable,
         };
       case 'GATEWAY_TIMEOUT':
         return {
-          title: 'Connection Timed Out',
-          description:
-            error.message ||
-            'Could not establish a stable connection with the upstream media server. Please try again.',
+          title: t.diagnostic.titles.gatewayTimeout,
+          description: error.message || t.diagnostic.descriptions.gatewayTimeout,
         };
       case 'RATE_LIMITED':
         return {
-          title: 'Too Many Requests',
-          description:
-            error.message ||
-            'The upstream provider is temporarily rate-limiting requests. Please wait a moment before retrying.',
+          title: t.diagnostic.titles.rateLimited,
+          description: error.message || t.diagnostic.descriptions.rateLimited,
         };
       default:
         return {
-          title: 'Extraction Failed',
-          description: error.message || 'An unexpected issue occurred while extracting this media.',
+          title: t.diagnostic.titles.extractionFailed,
+          description: error.message || t.diagnostic.descriptions.extractionFailed,
         };
     }
   };
@@ -123,8 +115,8 @@ export function DiagnosticCard({ error, onReset, onRetry }: DiagnosticCardProps)
             onClick={onReset}
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] text-[var(--colors-ink)] font-body text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-xs"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-[var(--colors-muted)]" />
-            <span>Try Another Link</span>
+            <ArrowLeft className="w-3.5 h-3.5 text-[var(--colors-muted)] rtl:rotate-180" />
+            <span>{t.diagnostic.tryAnother}</span>
           </button>
 
           {!isAmber && (
@@ -135,15 +127,18 @@ export function DiagnosticCard({ error, onReset, onRetry }: DiagnosticCardProps)
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[var(--colors-ink)] text-[var(--colors-canvas)] hover:opacity-90 font-body text-xs font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${retryCooldown ? 'animate-spin' : ''}`} />
-              <span>{retryCooldown ? 'Waiting (2s)...' : 'Retry'}</span>
+              <span>{retryCooldown ? t.diagnostic.waiting : t.diagnostic.retry}</span>
             </button>
           )}
         </div>
 
         <span className="font-mono text-[11px] text-[var(--colors-muted)] hidden sm:inline-block">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] text-[10px] text-[var(--colors-ink)]">ESC</kbd> to reset
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] text-[10px] text-[var(--colors-ink)]">ESC</kbd> {t.diagnostic.escReset}
         </span>
       </div>
     </div>
   );
 }
+
+export default DiagnosticCard;
+

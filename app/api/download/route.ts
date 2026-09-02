@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { zipSync, Zippable } from 'fflate';
 
+export const dynamic = 'force-dynamic';
+
 async function fetchMediaStream(targetUrl: string): Promise<Response | null> {
   // Attempt 1: Direct browser fetch without custom referer
   try {

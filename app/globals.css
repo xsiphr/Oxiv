@@ -1,8 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html[lang="ar"] .font-display,
+html[dir="rtl"] .font-display {
+  font-family: 'Amiri', serif;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+html[lang="ar"] .font-body,
+html[dir="rtl"] .font-body {
+  font-family: 'Noto Kufi Arabic', -apple-system, BlinkMacSystemFont, sans-serif;
+}
 
 :root {
   --font-display: 'Newsreader', Georgia, serif;
@@ -87,107 +100,41 @@ body {
 }
 
 ::selection {
-  background-color: var(--colors-ink);
+  background: var(--colors-ink);
   color: var(--colors-canvas);
 }
 
-/* Custom subtle scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Glass Header Effect */
+.glass-header {
+  background-color: rgba(20, 20, 20, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-::-webkit-scrollbar-track {
-  background: var(--colors-canvas);
+[data-theme="light"] .glass-header {
+  background-color: rgba(248, 248, 251, 0.85);
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--colors-hairline-strong);
-  border-radius: 3px;
+/* Custom blueprint utilities */
+.blueprint-grid-bg {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, var(--colors-hairline) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--colors-hairline) 1px, transparent 1px);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--colors-muted);
-}
-
-/* Custom minimalist scrollbar utility */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: var(--colors-hairline-strong) transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--colors-hairline-strong);
-  border-radius: 9999px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--colors-muted);
-}
-
-/* Step-based cursor blink animation */
-@keyframes editorCursorBlink {
-
-  0%,
-  49% {
-    opacity: 1;
-  }
-
-  50%,
-  100% {
+/* Smooth fade in animation */
+@keyframes fadeIn {
+  from {
     opacity: 0;
+    transform: translateY(6px);
   }
-}
-
-/* Monochrome Skeleton Pulse */
-@keyframes skeletonPulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-
-.animate-skeleton {
-  animation: skeletonPulse 1.8s ease-in-out infinite;
-}
-
-/* Progressive Blueprint Content Cascade (Static Gridlines) */
-@keyframes contentCascadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  100% {
+  to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.animate-content-cascade {
-  animation: contentCascadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* Premium Blueprint Glass Effect */
-.glass-header {
-  background-color: color-mix(in srgb, var(--colors-canvas) 78%, transparent);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+.animate-fadeIn {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

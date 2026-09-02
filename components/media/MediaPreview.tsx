@@ -19,6 +19,7 @@ import {
 import { SiTiktok, SiInstagram, SiFacebook, SiPinterest, SiX } from 'react-icons/si';
 
 import { formatBytes } from '@/lib/extractors/utils';
+import { useI18n } from '@/lib/i18n';
 
 interface MediaPreviewProps {
   media: MediaResult;
@@ -26,6 +27,7 @@ interface MediaPreviewProps {
 }
 
 export function MediaPreview({ media, onReset }: MediaPreviewProps) {
+  const { t } = useI18n();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [packagedZipSize, setPackagedZipSize] = useState<string | null>(null);
@@ -89,8 +91,8 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
       ...(media.formats.find((f) => f.type === 'archive' || f.extension === 'ZIP') || {}),
       id: `zip-${media.id}`,
       type: 'archive',
-      label: `All Photos (${media.items.length} Images)`,
-      quality: 'Lossless ZIP Package',
+      label: t.preview.allPhotos(media.items.length),
+      quality: t.preview.losslessZipPackage,
       extension: 'ZIP',
       size: zipSize,
       downloadUrl: '#zip',
@@ -101,10 +103,10 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
     const selectedFormat: MediaFormat = {
       id: `photo-selected-${activeSlideIndex + 1}`,
       type: 'image',
-      label: `Download Photo ${activeSlideIndex + 1}`,
-      quality: 'Original Master',
+      label: t.preview.downloadPhoto(activeSlideIndex + 1),
+      quality: t.preview.originalMaster,
       extension: currentItem.extension || 'JPG',
-      size: currentItem.size || 'Direct Stream',
+      size: currentItem.size || t.preview.directStream,
       downloadUrl: currentItem.url,
       isLossless: true,
     };
@@ -112,7 +114,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
     const audioFormat = media.formats.find((f) => f.type === 'audio');
 
     return [zipFormat, selectedFormat, ...(audioFormat ? [audioFormat] : [])];
-  }, [media, isCollection, activeSlideIndex, packagedZipSize]);
+  }, [media, isCollection, activeSlideIndex, packagedZipSize, t]);
 
   const handleDownload = async (format: MediaFormat) => {
     setDownloadingId(format.id);
@@ -245,7 +247,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--colors-hairline)] bg-[var(--colors-surface-card)] hover:bg-[var(--colors-surface-elevated)] text-[var(--colors-body)] hover:text-[var(--colors-ink)] font-mono text-xs transition-all cursor-pointer shadow-xs active:scale-95"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>New Extract</span>
+            <span>{t.preview.newExtract}</span>
           </button>
         </div>
       </div>
@@ -269,7 +271,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
               {isCollection ? (
                 <div className="absolute bottom-3 left-3 flex items-center gap-2 font-mono text-xs pointer-events-none">
                   <span className="px-2.5 py-1 rounded-md bg-black/40 border border-white/20 text-white backdrop-blur-md backdrop-saturate-150 font-semibold shadow-lg shadow-black/25">
-                    Slide {activeSlideIndex + 1} of {totalSlides}
+                    {t.preview.slideOf} {activeSlideIndex + 1} / {totalSlides}
                   </span>
                 </div>
               ) : (
@@ -310,10 +312,10 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--colors-muted)]">
-                    Album Slides ({media.items.length})
+                    {t.preview.albumSlides(media.items.length)}
                   </span>
                   <span className="font-mono text-[11px] text-[var(--colors-muted)]">
-                    Click to inspect
+                    {t.preview.clickToInspect}
                   </span>
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
@@ -408,7 +410,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[var(--colors-muted)]" />
                 <span className="font-mono text-xs font-semibold text-[var(--colors-ink)] uppercase tracking-wider">
-                  Available Streams ({displayedFormats.length})
+                  {t.preview.availableStreams} ({displayedFormats.length})
                 </span>
               </div>
             </div>
@@ -472,22 +474,22 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                       {isDownloading ? (
                         <>
                           <span className="inline-block w-3 h-3 border-2 border-[var(--colors-canvas)] border-t-transparent rounded-full animate-spin" />
-                          <span>{isZip ? 'Packaging...' : 'Streaming...'}</span>
+                          <span>{isZip ? t.preview.packaging : t.preview.streaming}</span>
                         </>
                       ) : isSaved ? (
                         <>
                           <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>{isZip && packagedZipSize ? `Ready • ${packagedZipSize}` : 'Saved'}</span>
+                          <span>{isZip && packagedZipSize ? `${t.preview.saved} • ${packagedZipSize}` : t.preview.saved}</span>
                         </>
                       ) : isZip ? (
                         <>
                           <Archive className="w-3.5 h-3.5" />
-                          <span>Download All (.ZIP)</span>
+                          <span>{t.preview.downloadAllZip}</span>
                         </>
                       ) : (
                         <>
                           <Download className="w-3.5 h-3.5" />
-                          <span>Download</span>
+                          <span>{t.preview.download}</span>
                         </>
                       )}
                     </button>
@@ -499,7 +501,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
             {/* Note box */}
             <div className="p-2.5 rounded-lg border border-dashed border-[var(--colors-hairline)] bg-[var(--colors-surface-elevated)] flex items-start gap-2">
               <span className="font-mono text-[11px] text-[var(--colors-muted)] leading-relaxed">
-                ℹ Streams are processed on-the-fly without storage retention. Cleaned of tracking pixels and overlays.
+                {t.preview.notice}
               </span>
             </div>
           </div>

@@ -3,6 +3,7 @@
 import React from 'react';
 import { SiTiktok, SiPinterest, SiInstagram, SiFacebook, SiX, SiYoutube } from 'react-icons/si';
 import { LogoLoop, LogoItem } from './LogoLoop';
+import { useI18n } from '@/lib/i18n';
 
 const PLATFORM_LOGOS: LogoItem[] = [
   {
@@ -62,18 +63,20 @@ const PLATFORM_LOGOS: LogoItem[] = [
 ];
 
 export function PlatformLogoStrip() {
+  const { t } = useI18n();
+
   return (
     <section className="w-full bg-[var(--colors-canvas)] transition-colors overflow-hidden">
       <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] py-6 sm:py-7 flex flex-col items-center justify-center gap-4">
         {/* Eyebrow Label */}
         <div className="flex items-center justify-center select-none">
           <span className="font-mono text-[10px] sm:text-[11px] font-semibold tracking-widest uppercase text-[var(--colors-muted)]">
-            PLATFORMS
+            {t.platforms.eyebrow}
           </span>
         </div>
 
         {/* Ambient Logo Loop Strip */}
-        <div className="w-full overflow-hidden relative">
+        <div dir="ltr" className="w-full overflow-hidden relative">
           <LogoLoop
             logos={PLATFORM_LOGOS}
             speed={45}

@@ -18,8 +18,10 @@ import { ExtractionStatus, MediaResult, Platform, ExtractionError, ApiResponse }
 import { detectPlatform } from '@/lib/platformRegistry';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
 import { PageSkeleton } from '@/components/ui/PageSkeleton';
+import { useI18n } from '@/lib/i18n';
 
 export default function Home() {
+  const { t } = useI18n();
   const [isReady, setIsReady] = useState(false);
   const [status, setStatus] = useState<ExtractionStatus>('idle');
   const [currentUrl, setCurrentUrl] = useState('');
@@ -75,20 +77,20 @@ export default function Home() {
     const initialSteps: StreamStepState[] = [
       {
         key: 'RESOLVE',
-        title: `Resolving target ${platformName} endpoint`,
-        detail: '↳ Locating direct media resource URL',
+        title: t.terminal.resolveTitle(platformName),
+        detail: t.terminal.resolveDetail,
         status: 'in_progress',
       },
       {
         key: 'FETCH',
-        title: 'Original media payload retrieved',
-        detail: '↳ Fetching direct unwatermarked source stream',
+        title: t.terminal.fetchTitle,
+        detail: t.terminal.fetchDetail(),
         status: 'waiting',
       },
       {
         key: 'READY',
-        title: 'Direct download stream ready',
-        detail: '↳ Media stream ready for client download',
+        title: t.terminal.readyTitle,
+        detail: t.terminal.readyDetail,
         status: 'waiting',
       },
     ];
@@ -117,16 +119,17 @@ export default function Home() {
 
       if (json.success && json.data) {
         const primaryFormat = json.data.formats?.[0];
-        const dynamicDetail = primaryFormat
-          ? `↳ Media detected (${primaryFormat.extension} • ${primaryFormat.size} • ${primaryFormat.quality || 'Original'})`
-          : '↳ Direct unwatermarked media stream ready';
+        const metaStr = primaryFormat
+          ? `${primaryFormat.extension} • ${primaryFormat.size} • ${primaryFormat.quality || 'Original'}`
+          : undefined;
+        const dynamicDetail = t.terminal.fetchDetail(metaStr);
 
         // Step 2: FETCH completes with real measured latency
         setSteps([
           { ...initialSteps[0], status: 'completed', latencyMs: resolveLatency },
           {
             ...initialSteps[1],
-            title: 'Original media payload retrieved',
+            title: t.terminal.fetchTitle,
             detail: dynamicDetail,
             status: 'completed',
             latencyMs: fetchLatency,
@@ -142,15 +145,15 @@ export default function Home() {
           { ...initialSteps[0], status: 'completed', latencyMs: resolveLatency },
           {
             ...initialSteps[1],
-            title: 'Original media payload retrieved',
+            title: t.terminal.fetchTitle,
             detail: dynamicDetail,
             status: 'completed',
             latencyMs: fetchLatency,
           },
           {
             ...initialSteps[2],
-            title: 'Direct download stream ready',
-            detail: '↳ Media stream ready for client download',
+            title: t.terminal.readyTitle,
+            detail: t.terminal.readyDetail,
             status: 'completed',
             latencyMs: readyLatency,
           },
@@ -179,7 +182,7 @@ export default function Home() {
           { ...initialSteps[0], status: 'completed', latencyMs: resolveLatency },
           {
             ...initialSteps[1],
-            title: 'Extraction pipeline rejected request',
+            title: t.terminal.rejectedTitle,
             detail: `↳ [${errPayload.code}] ${errPayload.message}`,
             status: 'error',
             latencyMs: fetchLatency,
@@ -206,7 +209,7 @@ export default function Home() {
         prev[0] || initialSteps[0],
         {
           key: 'FETCH',
-          title: 'Extraction network failure',
+          title: t.terminal.networkFailureTitle,
           detail: `↳ [GATEWAY_TIMEOUT] ${msg}`,
           status: 'error',
         },
@@ -321,7 +324,7 @@ export default function Home() {
         <SupportedPlatformsSection />
 
         {/* 9. Scroll Velocity Marquee Strip */}
-        <ScrollVelocityStrip />
+        <ScrollVelocityStrip texts={t.ticker} />
 
         {/* 10. Minimal Technical FAQ Accordion */}
         <FAQSection />

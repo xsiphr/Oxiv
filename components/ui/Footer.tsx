@@ -2,8 +2,11 @@
 
 import React from 'react';
 import { SiGithub } from 'react-icons/si';
+import { useI18n } from '@/lib/i18n';
 
 export function Footer() {
+  const { t } = useI18n();
+
   return (
     <footer className="w-full border-t border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas)] mt-auto transition-colors">
       <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-row items-center justify-between gap-3 sm:gap-4 w-full">
@@ -13,7 +16,7 @@ export function Footer() {
             Oxiv
           </span>
           <span className="opacity-60 shrink-0">•</span>
-          <span className="truncate">Open Media Parser Core</span>
+          <span className="truncate">{t.footer.architecture}</span>
         </div>
 
         {/* GitHub Repository Link (Right) */}
@@ -25,7 +28,7 @@ export function Footer() {
           aria-label="GitHub Repository"
         >
           <SiGithub className="w-4 h-4" />
-          <span>GitHub</span>
+          <span>{t.footer.github}</span>
         </a>
       </div>
     </footer>
@@ -33,3 +36,4 @@ export function Footer() {
 }
 
 export default Footer;
+
