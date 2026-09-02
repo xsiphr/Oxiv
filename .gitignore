@@ -1,0 +1,53 @@
+# --- Dependencies ---
+/node_modules
+/.pnp
+.pnp.js
+
+# --- Next.js build output ---
+/.next/
+/out/
+/build
+
+# --- Production ---
+/dist
+
+# --- Environment variables ---
+.env
+.env*.local
+.env.development
+.env.production
+
+# --- TypeScript build info ---
+*.tsbuildinfo
+next-env.d.ts
+
+# --- Debug / logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- Editor / OS ---
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# --- Vercel ---
+.vercel
+
+# --- AI assistant / personal notes (never publish these) ---
+AGENTS.md
+CLAUDE.md
+.agents/
+.agent/
+.claude/
+.antigravity/
+.windsurf/
+.cursor/
+*.aiprompt.md
+*.notes.md
+NOTES.md
+TODO.md
+/prompts/
+/scratch/

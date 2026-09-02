@@ -1,0 +1,35 @@
+'use client';
+
+import React from 'react';
+import { SiGithub } from 'react-icons/si';
+
+export function Footer() {
+  return (
+    <footer className="w-full border-t border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas)] mt-auto transition-colors">
+      <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-row items-center justify-between gap-3 sm:gap-4 w-full">
+        {/* Brand Mark & Protocol Tagline (Left) */}
+        <div className="flex items-center gap-2 sm:gap-2.5 font-mono text-[11px] sm:text-xs text-[var(--colors-muted)] min-w-0">
+          <span className="font-display font-bold text-sm sm:text-base text-[var(--colors-ink)] shrink-0">
+            Oxiv
+          </span>
+          <span className="opacity-60 shrink-0">•</span>
+          <span className="truncate">Open Media Parser Core</span>
+        </div>
+
+        {/* GitHub Repository Link (Right) */}
+        <a
+          href="https://github.com/xsiphr/Oxiv"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 sm:gap-2 font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] transition-colors p-1.5 rounded-lg shrink-0"
+          aria-label="GitHub Repository"
+        >
+          <SiGithub className="w-4 h-4" />
+          <span>GitHub</span>
+        </a>
+      </div>
+    </footer>
+  );
+}
+
+export default Footer;
