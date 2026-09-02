@@ -85,20 +85,25 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
     }
   };
 
-  const handleNativePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pasted = e.clipboardData.getData('text');
-    if (pasted) {
-      const clean = sanitizeUrl(pasted);
-      setUrl(clean);
-      setError(null);
-      const platform = detectPlatform(clean) as Platform;
-      setDetectedPlatform(platform);
-      if (clean) {
-        setTimeout(() => {
-          onExtract(clean);
-        }, 300);
-      }
+  const processAndExtract = (rawText: string) => {
+    const clean = sanitizeUrl(rawText);
+    if (!clean) return;
+
+    setUrl(clean);
+    setError(null);
+
+    const platform = detectPlatform(clean) as Platform;
+    setDetectedPlatform(platform);
+
+    if (platform && platform !== 'unknown') {
+      onExtract(clean);
     }
+  };
+
+  const handleNativePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    if (!pastedText) return;
+    processAndExtract(pastedText);
   };
 
   const handlePaste = async (e: React.MouseEvent) => {
@@ -106,16 +111,7 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
     try {
       const text = await navigator.clipboard.readText();
       if (text) {
-        const clean = sanitizeUrl(text);
-        setUrl(clean);
-        setError(null);
-        const platform = detectPlatform(clean) as Platform;
-        setDetectedPlatform(platform);
-        if (clean) {
-          setTimeout(() => {
-            onExtract(clean);
-          }, 300);
-        }
+        processAndExtract(text);
       }
     } catch (err) {
       console.error('Clipboard access notice:', err);
@@ -162,8 +158,8 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
               onChange={handleInputChange}
               onPaste={handleNativePaste}
               placeholder="Paste link here..."
-              disabled={isLoading}
-              className="font-mono text-xs sm:text-sm bg-transparent outline-none flex-1 min-w-0 text-[var(--colors-ink)] placeholder:text-[var(--colors-muted)] px-2.5 sm:px-3 disabled:opacity-50"
+              readOnly={isLoading}
+              className="font-mono text-xs sm:text-sm bg-transparent outline-none flex-1 min-w-0 text-[var(--colors-ink)] placeholder:text-[var(--colors-muted)] px-2.5 sm:px-3 disabled:opacity-50 read-only:opacity-60"
             />
 
             {/* Quick Actions (Clear / Paste) */}

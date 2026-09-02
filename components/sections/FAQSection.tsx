@@ -39,6 +39,14 @@ const FAQ_ITEMS: FAQItem[] = [
       'The Recents list you see on the homepage is stored entirely in your browser\'s local storage — it never touches Oxiv\'s servers. Nothing is written to any database, and no extraction history is logged, tracked, or associated with you server-side. Clearing your browser data or using a different device clears it too.',
     technicalNote: 'Client-side only. Zero server-side retention, unchanged.',
   },
+  {
+    id: 'faq-5',
+    question: 'Why does my browser prompt for clipboard permission?',
+    answer:
+      'Browsers enforce differing security boundaries on the asynchronous Clipboard API (navigator.clipboard.readText()). While Chromium-based engines allow persistent domain-level permissions, Gecko-based engines (Firefox desktop and mobile) require an explicit user confirmation prompt per read event to mitigate unauthorized clipboard access by third-party scripts.',
+    technicalNote:
+      'Enforced browser-level security sandbox. Standard keyboard paste (Ctrl+V / long-press) remains direct.',
+  },
 ];
 
 export function FAQSection() {
