@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   description:
     "Extract raw media effortlessly from TikTok, Instagram, Pinterest, and X. Clean, fast, and no watermark.",
   icons: {
-    icon: "/logos/logomark-tab.svg",
-    shortcut: "/logos/logomark-tab.svg",
-    apple: "/logos/logomark-tab.svg",
+    icon: "/logos/logo-monolith-tab.svg",
+    shortcut: "/logos/logo-monolith-tab.svg",
+    apple: "/logos/logo-monolith-tab.svg",
   },
 };
 

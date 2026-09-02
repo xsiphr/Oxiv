@@ -48,11 +48,13 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full glass-header border-b border-dashed border-[var(--colors-hairline)] transition-colors duration-300">
       <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between">
-        {/* Brand Logo (Enlarged) */}
-        <a href="/" className="select-none">
-          <span className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[var(--colors-ink)] hover:opacity-85 transition-opacity">
-            Oxiv
-          </span>
+        {/* Brand Monolith Logo */}
+        <a href="/" className="flex items-center select-none group" aria-label="Oxiv">
+          <img
+            src="/logos/logo-monolith.svg"
+            alt="Oxiv Logo"
+            className="w-auto h-8 sm:h-9 object-contain transition-transform group-hover:scale-105"
+          />
         </a>
 
         {/* Minimal Actions (GitHub, Theme Toggle, Language Switcher) */}

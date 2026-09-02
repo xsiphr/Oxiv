@@ -143,6 +143,11 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
 
   return (
     <div className="w-full flex flex-col items-center">
+      {/* Brand Name */}
+      <div className="font-display text-5xl sm:text-6xl md:text-7xl rtl:text-5xl rtl:sm:text-6xl rtl:md:text-7xl rtl:lg:text-[5.25rem] font-bold tracking-tight text-[var(--colors-ink)] text-center mb-3 sm:mb-4 select-none leading-[1.08] rtl:leading-[1.22]">
+        {t.hero.brand}
+      </div>
+
       {/* Editorial Headline */}
       <h1 className="font-display text-5xl sm:text-6xl md:text-7xl rtl:text-5xl rtl:sm:text-6xl rtl:md:text-7xl rtl:lg:text-[5.25rem] font-bold tracking-tight text-[var(--colors-ink)] text-center mb-8 sm:mb-10 max-w-4xl rtl:max-w-2xl lg:rtl:max-w-3xl leading-[1.08] rtl:leading-[1.22]">
         {t.hero.title}

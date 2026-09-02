@@ -7,6 +7,7 @@ export const ar: TranslationDictionary = {
     langToggle: 'EN',
   },
   hero: {
+    brand: 'أوكسيڤ',
     title: 'استخراج الوسائط الخام بأعلى جودة.',
     subtitle: 'بدون علامات مائية، بدون وسيط، وبدون إعادة ترميز.',
     placeholder: 'ضع رابط الفيديو أو المنشور هنا...',

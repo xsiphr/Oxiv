@@ -7,6 +7,7 @@ export const en: TranslationDictionary = {
     langToggle: 'AR',
   },
   hero: {
+    brand: 'Oxiv',
     title: 'Extract raw media effortlessly.',
     subtitle: 'No watermarks, no middleman, and zero re-encoding.',
     placeholder: 'Paste link here...',

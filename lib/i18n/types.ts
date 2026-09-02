@@ -7,6 +7,7 @@ export interface TranslationDictionary {
     langToggle: string;
   };
   hero: {
+    brand: string;
     title: string;
     subtitle: string;
     placeholder: string;
