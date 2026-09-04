@@ -275,6 +275,8 @@ export const ar: TranslationDictionary = {
     commitsTooltip: (count: number, date: string) => `${count} ${count === 1 ? 'التزام' : 'التزامات'} في ${date}`,
     fallbackTitle: 'سجل النشاط غير متاح مؤقتاً',
     fallbackDesc: 'تم بلوغ الحد الأقصى لطلبات GitHub API أو تعذر الاتصال. يمكنك الاطلاع على الالتزامات مباشرة على GitHub.',
+    showMore: (count: number) => `عرض المزيد (+${count} التزام)`,
+    showLess: 'عرض أقل',
   },
   footer: {
     builtBy: 'تطوير وفق معايير المصادر المفتوحة',

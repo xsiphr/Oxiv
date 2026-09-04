@@ -249,6 +249,8 @@ export const en: TranslationDictionary = {
     commitsTooltip: (count: number, date: string) => `${count} ${count === 1 ? 'commit' : 'commits'} on ${date}`,
     fallbackTitle: 'Activity Ledger Temporarily Unavailable',
     fallbackDesc: 'GitHub API rate limit reached or network connection dropped. You can still inspect commits directly on GitHub.',
+    showMore: (count: number) => `Show more (+${count} commits)`,
+    showLess: 'Show less',
   },
   footer: {
     builtBy: 'Architected for lossless media extraction.',

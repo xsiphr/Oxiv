@@ -161,6 +161,8 @@ export interface TranslationDictionary {
     commitsTooltip: (count: number, date: string) => string;
     fallbackTitle: string;
     fallbackDesc: string;
+    showMore: (count: number) => string;
+    showLess: string;
   };
   footer: {
     builtBy: string;

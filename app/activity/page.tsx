@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   description: 'Live development activity, calendar heatmap, and commit ledger for the Oxiv open-source media parser.',
 };
 
+// Next.js Route Segment Config: Revalidate every hour (3600 seconds) via ISR
+export const revalidate = 3600;
+
 async function getCommits(): Promise<{ commits: GitHubCommitData[]; error: string | null }> {
   try {
     const res = await fetch('https://api.github.com/repos/xsiphr/Oxiv/commits?per_page=100', {
