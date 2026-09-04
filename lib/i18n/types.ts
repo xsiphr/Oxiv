@@ -134,6 +134,34 @@ export interface TranslationDictionary {
       extractionFailed: string;
     };
   };
+  features: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    items: {
+      multiPhoto: { title: string; desc: string };
+      zipBundling: { title: string; desc: string };
+      liveProgress: { title: string; desc: string };
+      zeroStorage: { title: string; desc: string };
+      noWatermarks: { title: string; desc: string };
+      directPassthrough: { title: string; desc: string };
+    };
+  };
+  activity: {
+    backToHome: string;
+    title: string;
+    subtitle: string;
+    viewOnGithub: string;
+    totalCommits: (count: number) => string;
+    heatmapTitle: string;
+    heatmapSubtitle: string;
+    legendLess: string;
+    legendMore: string;
+    historyTitle: string;
+    commitsTooltip: (count: number, date: string) => string;
+    fallbackTitle: string;
+    fallbackDesc: string;
+  };
   footer: {
     builtBy: string;
     license: string;

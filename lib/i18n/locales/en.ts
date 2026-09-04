@@ -204,6 +204,52 @@ export const en: TranslationDictionary = {
       extractionFailed: 'An error occurred while parsing media streams for this link.',
     },
   },
+  features: {
+    eyebrow: 'DIFFERENTIATORS',
+    title: 'Built without compromise.',
+    subtitle: 'Architectural capabilities designed for lossless extraction, granular bundling, and complete privacy.',
+    items: {
+      multiPhoto: {
+        title: 'Full Multi-Photo Extraction',
+        desc: 'Even large albums with dozens of photos are fully extracted — bypassing the truncation limits common in other tools.',
+      },
+      zipBundling: {
+        title: 'Quality-Selectable ZIP Bundling',
+        desc: 'Choose HD, SD, or all video variants packaged alongside isolated soundtracks in one organized archive.',
+      },
+      liveProgress: {
+        title: 'Real-Time Packaging Progress',
+        desc: 'Watch live chunk-by-chunk download and compression progress directly in the browser instead of a frozen spinner.',
+      },
+      zeroStorage: {
+        title: 'Zero Server Storage',
+        desc: 'Every extraction and ZIP bundle executes entirely in client-side memory. No media or query history touches our disks.',
+      },
+      noWatermarks: {
+        title: 'Original Masters, No Login',
+        desc: 'Direct CDN edge media without vendor watermarks, re-encoding badges, accounts, or authentication tokens.',
+      },
+      directPassthrough: {
+        title: 'Pure Bitstream Passthrough',
+        desc: 'Color profiles, spatial dimensions, and audio bitrates remain 100% bit-for-bit identical to upstream masters.',
+      },
+    },
+  },
+  activity: {
+    backToHome: 'Back to Oxiv',
+    title: 'Development Activity',
+    subtitle: 'Live commit ledger and contribution rhythm tracked directly from the xsiphr/Oxiv repository.',
+    viewOnGithub: 'View on GitHub',
+    totalCommits: (count: number) => `${count} recent commits recorded`,
+    heatmapTitle: 'Contribution Heatmap',
+    heatmapSubtitle: 'Daily commit cadence aggregated over the active development cycle.',
+    legendLess: 'Fewer',
+    legendMore: 'More',
+    historyTitle: 'Recent Commit History',
+    commitsTooltip: (count: number, date: string) => `${count} ${count === 1 ? 'commit' : 'commits'} on ${date}`,
+    fallbackTitle: 'Activity Ledger Temporarily Unavailable',
+    fallbackDesc: 'GitHub API rate limit reached or network connection dropped. You can still inspect commits directly on GitHub.',
+  },
   footer: {
     builtBy: 'Architected for lossless media extraction.',
     license: 'MIT Licensed',

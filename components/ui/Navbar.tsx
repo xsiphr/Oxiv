@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Sun, Moon } from 'lucide-react';
 import { SiGithub } from 'react-icons/si';
 import { useI18n } from '@/lib/i18n';
@@ -59,15 +60,13 @@ export function Navbar() {
 
         {/* Minimal Actions (GitHub, Theme Toggle, Language Switcher) */}
         <div className="flex items-center gap-2 sm:gap-3 text-[var(--colors-muted)]">
-          <a
-            href="https://github.com/xsiphr/Oxiv"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/activity"
             className="hover:text-[var(--colors-ink)] transition-colors p-2 rounded-xl hover:bg-[var(--colors-surface-card)]"
-            aria-label="GitHub Repository"
+            aria-label="GitHub Activity"
           >
             <SiGithub className="w-5 h-5" />
-          </a>
+          </Link>
 
           {/* Theme Toggle Button */}
           <button

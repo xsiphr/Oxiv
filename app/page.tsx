@@ -11,6 +11,7 @@ import { MetricsGrid } from '@/components/sections/MetricsGrid';
 import { PlatformLogoStrip } from '@/components/effects/PlatformLogoStrip';
 import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
 import { SupportedPlatformsSection } from '@/components/sections/SupportedPlatformsSection';
+import { FeaturesSection } from '@/components/sections/FeaturesSection';
 import { ScrollVelocityStrip } from '@/components/effects/ScrollVelocityStrip';
 import { FAQSection } from '@/components/sections/FAQSection';
 import { Footer } from '@/components/ui/Footer';
@@ -386,7 +387,10 @@ export default function Home() {
         {/* 8. Supported Platforms & Formats */}
         <SupportedPlatformsSection />
 
-        {/* 9. Scroll Velocity Marquee Strip */}
+        {/* 9. Standout Features & Differentiators */}
+        <FeaturesSection />
+
+        {/* 10. Scroll Velocity Marquee Strip */}
         <ScrollVelocityStrip texts={t.ticker} />
 
         {/* 10. Minimal Technical FAQ Accordion */}
