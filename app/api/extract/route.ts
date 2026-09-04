@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { lookupPlatform, LookupResult } from '@/lib/platformRegistry';
 import { extractTikTok } from '@/lib/extractors/tiktok';
 import { extractPinterest } from '@/lib/extractors/pinterest';
+import { extractFacebook } from '@/lib/extractors/facebook';
 import { ExtractionPipelineError } from '@/lib/extractors/errors';
 import { ApiResponse, MediaResult } from '@/types';
 
@@ -41,7 +42,7 @@ async function handleExtraction(url: string, lookup: LookupResult): Promise<Next
     );
   }
 
-  // Tier 2A: Planned platforms under active deployment (Instagram, Facebook, X) -> HTTP 503
+  // Tier 2A: Planned platforms under active deployment (Instagram, X) -> HTTP 503
   if ((lookup.status === 'planned' || lookup.status === 'next') && lookup.platform) {
     return NextResponse.json(
       {
@@ -49,7 +50,7 @@ async function handleExtraction(url: string, lookup: LookupResult): Promise<Next
         error: {
           code: 'PIPELINE_PENDING',
           message: `${lookup.platform.name} support is in active deployment.`,
-          technicalDetail: `Live extraction is operational for TikTok and Pinterest. ${lookup.platform.name} pipeline is queued.`,
+          technicalDetail: `Live extraction is operational for TikTok, Pinterest, and Facebook. ${lookup.platform.name} pipeline is queued.`,
           platform: lookup.platform.id,
           platformName: lookup.platform.name,
           statusHint: 503,
@@ -59,7 +60,7 @@ async function handleExtraction(url: string, lookup: LookupResult): Promise<Next
     );
   }
 
-  // Tier 1: Live Supported Platforms (TikTok, Pinterest)
+  // Tier 1: Live Supported Platforms (TikTok, Pinterest, Facebook)
   if (lookup.status === 'live' && lookup.platform) {
     try {
       let mediaResult: MediaResult;
@@ -67,6 +68,8 @@ async function handleExtraction(url: string, lookup: LookupResult): Promise<Next
         mediaResult = await extractTikTok(url);
       } else if (lookup.platform.id === 'pinterest') {
         mediaResult = await extractPinterest(url);
+      } else if (lookup.platform.id === 'facebook') {
+        mediaResult = await extractFacebook(url);
       } else {
         throw new Error(`Unsupported live platform: ${lookup.platform.id}`);
       }
@@ -183,8 +186,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       status: 'active',
       service: 'Oxiv Media Extraction Engine',
-      supportedLive: ['tiktok', 'pinterest'],
-      pipelinePending: ['instagram', 'facebook', 'x', 'youtube'],
+      supportedLive: ['tiktok', 'pinterest', 'facebook'],
+      pipelinePending: ['instagram', 'x', 'youtube'],
       usage: 'POST /api/extract with { url } or GET /api/extract?url=...',
     });
   }

@@ -40,15 +40,15 @@ export const PLATFORM_REGISTRY: PlatformEntry[] = [
     status: 'live',
     formats: 'Original master image, progressive MP4',
   },
-
-  // ─── 2. Next Up (In Active Pipeline Build) ───
   {
     id: 'facebook',
     name: 'Facebook',
     domains: ['facebook.com', 'fb.watch', 'fb.com', 'm.facebook.com', 'web.facebook.com'],
-    status: 'next',
-    formats: 'Coming next',
+    status: 'live',
+    formats: 'HD/SD Progressive MP4, Isolated Soundtrack, Master Photo, Album ZIP',
   },
+
+  // ─── 2. Next Up (In Active Pipeline Build) ───
 
   // ─── 3. Planned Platforms (In Active Pipeline Deployment) ───
   {
