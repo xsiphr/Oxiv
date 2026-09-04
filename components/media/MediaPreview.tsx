@@ -43,6 +43,9 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [selectedPhotoIndices, setSelectedPhotoIndices] = useState<Set<number>>(new Set());
 
+  // Quality selection state for multi-quality video ZIP bundling ('hd' | 'sd' | 'everything')
+  const [videoZipQuality, setVideoZipQuality] = useState<'hd' | 'sd' | 'everything'>('hd');
+
   const isCollection = Boolean(media.isCollection && media.items && media.items.length > 1);
   const activeItem: MediaItem | null =
     isCollection && media.items ? media.items[activeSlideIndex] || media.items[0] : null;
@@ -53,6 +56,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
     setCardStates({});
     setActiveSlideIndex(0);
     setIsPhotoModalOpen(false);
+    setVideoZipQuality('hd');
     if (media.items) {
       setSelectedPhotoIndices(new Set(media.items.map((_, i) => i)));
     }
@@ -358,22 +362,68 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
     executeZipDownload([...photoItems, ...audioItem], filename, 'everything-zip');
   };
 
-  // Video Mode: Download All (ZIP) bundling video MP4 + audio MP3
-  const handleDownloadVideoBundle = () => {
+  // Video Mode: Download All (ZIP) bundling video MP4 + audio MP3 with quality selection
+  const handleDownloadVideoBundle = (variant: 'hd' | 'sd' | 'everything' | 'all' = 'all') => {
     const cleanId = media.id.replace(/^[a-z]+-/, '');
-    const filename = `oxiv-${media.platform}-${cleanId}-bundle.zip`;
-
     const validFormats = media.formats.filter(
       (f) => f.type !== 'archive' && f.downloadUrl && !f.downloadUrl.startsWith('#')
     );
 
-    const items: ZipBundleItem[] = validFormats.map((f, idx) => {
-      const suffix =
-        f.type === 'audio'
-          ? 'audio-soundtrack'
-          : f.type === 'image'
-          ? 'image-master'
-          : `video-track-${idx + 1}`;
+    let selectedFormats: MediaFormat[] = validFormats;
+    let fileSuffix = 'bundle';
+    let buttonId = 'video-bundle-zip';
+
+    if (variant === 'hd') {
+      const hd = validFormats.find(
+        (f) =>
+          f.type === 'video' &&
+          (f.id.includes('-hd') ||
+            f.quality?.toLowerCase().includes('hd') ||
+            f.label.toLowerCase().includes('(hd)'))
+      );
+      const audio = validFormats.filter((f) => f.type === 'audio');
+      selectedFormats = [hd, ...audio].filter((f): f is MediaFormat => Boolean(f));
+      fileSuffix = 'bundle-hd';
+      buttonId = 'video-bundle-hd';
+    } else if (variant === 'sd') {
+      const sd = validFormats.find(
+        (f) =>
+          f.type === 'video' &&
+          (f.id.includes('-sd') ||
+            f.quality?.toLowerCase().includes('sd') ||
+            f.label.toLowerCase().includes('(sd)'))
+      );
+      const audio = validFormats.filter((f) => f.type === 'audio');
+      selectedFormats = [sd, ...audio].filter((f): f is MediaFormat => Boolean(f));
+      fileSuffix = 'bundle-sd';
+      buttonId = 'video-bundle-sd';
+    } else if (variant === 'everything') {
+      selectedFormats = validFormats;
+      fileSuffix = 'bundle-everything';
+      buttonId = 'video-bundle-everything';
+    }
+
+    const filename = `oxiv-${media.platform}-${cleanId}-${fileSuffix}.zip`;
+
+    const items: ZipBundleItem[] = selectedFormats.map((f, idx) => {
+      let suffix: string;
+      if (f.type === 'audio') {
+        suffix = 'audio-soundtrack';
+      } else if (f.type === 'image') {
+        suffix = 'image-master';
+      } else {
+        const isHd =
+          f.id.includes('-hd') ||
+          f.quality?.toLowerCase().includes('hd') ||
+          f.label.toLowerCase().includes('(hd)');
+        const isSd =
+          f.id.includes('-sd') ||
+          f.quality?.toLowerCase().includes('sd') ||
+          f.label.toLowerCase().includes('(sd)');
+        if (isHd) suffix = 'video-hd';
+        else if (isSd) suffix = 'video-sd';
+        else suffix = `video-track-${idx + 1}`;
+      }
       const kind: ZipBundleItem['kind'] =
         f.type === 'audio' ? 'audio' : f.type === 'image' ? 'photo' : 'video';
       return {
@@ -384,10 +434,10 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
       };
     });
 
-    executeZipDownload(items, filename, 'video-bundle-zip');
+    executeZipDownload(items, filename, buttonId);
   };
 
-  // Standard stream download handler
+  // Standard stream download handler with explicit quality naming (HD vs SD)
   const handleDownload = (format: MediaFormat) => {
     if (format.type === 'archive' || format.downloadUrl === '#zip') {
       handleDownloadFullAlbumZip();
@@ -395,12 +445,24 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
     }
 
     const cleanId = media.id.replace(/^[a-z]+-/, '');
-    const suffix =
-      format.type === 'audio'
-        ? 'audio'
-        : format.type === 'image'
-        ? (isCollection ? `photo-${activeSlideIndex + 1}` : 'image')
-        : 'video';
+    let suffix = 'video';
+    if (format.type === 'audio') {
+      suffix = 'audio';
+    } else if (format.type === 'image') {
+      suffix = isCollection ? `photo-${activeSlideIndex + 1}` : 'image';
+    } else if (format.type === 'video') {
+      const isHd =
+        format.id.includes('-hd') ||
+        format.quality?.toLowerCase().includes('hd') ||
+        format.label.toLowerCase().includes('(hd)');
+      const isSd =
+        format.id.includes('-sd') ||
+        format.quality?.toLowerCase().includes('sd') ||
+        format.label.toLowerCase().includes('(sd)');
+      if (isHd) suffix = 'video-hd';
+      else if (isSd) suffix = 'video-sd';
+      else suffix = 'video';
+    }
     const filename = `oxiv-${media.platform}-${cleanId}-${suffix}.${format.extension.toLowerCase()}`;
     executeSingleDownload(format.downloadUrl, filename, format.id);
   };
@@ -440,6 +502,39 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
     !isCollection &&
     media.formats.filter((f) => f.type !== 'archive' && f.downloadUrl && !f.downloadUrl.startsWith('#'))
       .length >= 2;
+
+  // Multi-quality video detection (e.g. Facebook HD + SD)
+  const videoFormats = useMemo(
+    () =>
+      media.formats.filter(
+        (f) => f.type === 'video' && f.downloadUrl && !f.downloadUrl.startsWith('#')
+      ),
+    [media.formats]
+  );
+
+  const hdVideoFormat = useMemo(
+    () =>
+      videoFormats.find(
+        (f) =>
+          f.id.includes('-hd') ||
+          f.quality?.toLowerCase().includes('hd') ||
+          f.label.toLowerCase().includes('(hd)')
+      ),
+    [videoFormats]
+  );
+
+  const sdVideoFormat = useMemo(
+    () =>
+      videoFormats.find(
+        (f) =>
+          f.id.includes('-sd') ||
+          f.quality?.toLowerCase().includes('sd') ||
+          f.label.toLowerCase().includes('(sd)')
+      ),
+    [videoFormats]
+  );
+
+  const hasMultiQualityVideo = !isCollection && Boolean(hdVideoFormat && sdVideoFormat);
 
   // Check if photo slideshow has both photos AND an audio track
   const isPhotoEverythingEligible = isCollection && Boolean(audioFormat);
@@ -926,8 +1021,104 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                       );
                     })}
 
-                    {/* Dashed Horizontal Divider + Download All (ZIP) Bundle Card */}
-                    {isVideoBundleEligible && (
+                    {/* Dashed Horizontal Divider + Video ZIP Bundling Cards */}
+                    {/* Dashed Horizontal Divider + Video ZIP Bundling Card */}
+                    {hasMultiQualityVideo ? (
+                      <>
+                        <div className="border-t border-dashed border-[var(--colors-hairline)] my-1" />
+
+                        <div className="p-3.5 rounded-xl border bg-[var(--colors-surface-card)] border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group shadow-xs outline-none">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <Archive className="w-3.5 h-3.5 text-[var(--colors-muted)] group-hover:text-[var(--colors-ink)] transition-colors" />
+                              <span className="font-body text-xs sm:text-sm font-semibold text-[var(--colors-ink)]">
+                                {t.preview.downloadAllZipCard}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-[var(--colors-muted)]">
+                              <span className="px-1.5 py-0.5 rounded bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] text-[var(--colors-body)] font-semibold">
+                                ZIP
+                              </span>
+                              <span>
+                                {videoZipQuality === 'hd'
+                                  ? t.preview.videoHdZipDesc
+                                  : videoZipQuality === 'sd'
+                                  ? t.preview.videoSdZipDesc
+                                  : t.preview.videoEverythingZipDesc}
+                              </span>
+                            </div>
+                            <p className="font-body text-[11px] text-[var(--colors-muted)] leading-tight pt-0.5">
+                              {t.preview.zipHint}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
+                            {/* Segmented Quality Toggle ("HD" | "SD" | "All") */}
+                            <div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--colors-surface-elevated)] border border-dashed border-[var(--colors-hairline)] font-mono text-xs">
+                              {(
+                                [
+                                  { id: 'hd', label: 'HD' },
+                                  { id: 'sd', label: 'SD' },
+                                  { id: 'everything', label: locale === 'ar' ? 'الكل' : 'All' },
+                                ] as const
+                              ).map((opt) => {
+                                const isActive = videoZipQuality === opt.id;
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => setVideoZipQuality(opt.id)}
+                                    className={`px-2.5 py-1 rounded-md transition-all text-xs font-semibold cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--colors-ink)] ${
+                                      isActive
+                                        ? 'bg-[var(--colors-ink)] text-[var(--colors-canvas)] shadow-xs'
+                                        : 'text-[var(--colors-muted)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-card)]'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Download Action Button */}
+                            {(() => {
+                              const cardState = cardStates[`video-bundle-${videoZipQuality}`];
+                              const isLoading = cardState?.status === 'loading';
+                              const isSaved = cardState?.status === 'saved';
+
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadVideoBundle(videoZipQuality)}
+                                  disabled={isLoading}
+                                  className="px-3.5 py-1.5 rounded-lg font-body font-semibold text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-75 min-w-[125px] active:scale-95 bg-[var(--colors-ink)] text-[var(--colors-canvas)] hover:opacity-90 outline-none focus-visible:ring-1 focus-visible:ring-[var(--colors-ink)]"
+                                >
+                                  {isLoading ? (
+                                    <>
+                                      <span className="inline-block w-3 h-3 border-2 border-[var(--colors-canvas)] border-t-transparent rounded-full animate-spin shrink-0" />
+                                      <span className="font-mono text-[11px] sm:text-xs">
+                                        {cardState?.progress?.displayText || t.preview.packaging}
+                                      </span>
+                                    </>
+                                  ) : isSaved ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                      <span>{t.preview.saved}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Archive className="w-3.5 h-3.5" />
+                                      <span>{t.preview.downloadAllZip}</span>
+                                    </>
+                                  )}
+                                </button>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      </>
+                    ) : isVideoBundleEligible ? (
                       <>
                         <div className="border-t border-dashed border-[var(--colors-hairline)] my-1" />
 
@@ -959,7 +1150,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                             return (
                               <button
                                 type="button"
-                                onClick={handleDownloadVideoBundle}
+                                onClick={() => handleDownloadVideoBundle('all')}
                                 disabled={isLoading}
                                 className="px-3.5 py-1.5 rounded-lg font-body font-semibold text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-75 min-w-[125px] active:scale-95 bg-[var(--colors-ink)] text-[var(--colors-canvas)] hover:opacity-90 outline-none focus-visible:ring-1 focus-visible:ring-[var(--colors-ink)]"
                               >
@@ -986,7 +1177,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                           })()}
                         </div>
                       </>
-                    )}
+                    ) : null}
                   </>
                 )}
               </div>

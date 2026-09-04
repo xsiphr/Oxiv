@@ -28,6 +28,21 @@ export const FB_DESKTOP_HEADERS: HeadersInit = {
   'Upgrade-Insecure-Requests': '1',
 };
 
+export const FB_GRAPHQL_HEADERS: HeadersInit = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Accept': '*/*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Ch-Ua-Platform': '"Windows"',
+  'Sec-Fetch-Dest': 'empty',
+  'Sec-Fetch-Mode': 'cors',
+  'Sec-Fetch-Site': 'same-origin',
+  'Origin': 'https://www.facebook.com',
+  'Content-Type': 'application/x-www-form-urlencoded',
+};
+
 /**
  * Resolves shortened Facebook URLs (e.g. fb.watch, fb.com) and normalizes mobile/touch subdomains
  * to canonical www.facebook.com desktop URLs.
@@ -117,8 +132,14 @@ export function identifyFacebookContentType(url: string): FacebookContentType {
     return 'video';
   }
 
-  // 3. Album / Mediaset
-  if (/\/media\/set\/?\?set=a\.\d+/i.test(clean) || /set=a\.\d+/i.test(clean)) {
+  // 3. Album / Mediaset (Page album, Group album, /media/set/, /photos/albums/, /albums/, /photos/a.)
+  if (
+    /\/media\/set\/?\?set=a\.\d+/i.test(clean) ||
+    /set=a\.\d+/i.test(clean) ||
+    /\/photos\/albums\/\d+/i.test(clean) ||
+    /\/albums\/\d+/i.test(clean) ||
+    /\/photos\/a\.\d+/i.test(clean)
+  ) {
     return 'album';
   }
 
@@ -428,6 +449,11 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
   }
 
   const { html, finalUrl } = await fetchFacebookHtml(canonicalUrl);
+  const lsdMatch =
+    html.match(/"LSD",\[\],\{"token":"([^"]+)"\}/) ||
+    html.match(/name="lsd"\s+value="([^"]+)"/);
+  const lsdToken = lsdMatch ? lsdMatch[1] : '';
+
   const og = extractOpenGraphTags(html);
   const ogDetails = parseOgTitleDetails(og.title);
   const jsonObjects = extractBboxJsonObjects(html);
@@ -437,11 +463,27 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
     'videoDeliveryLegacyFields',
     'currMedia',
     'grid_media',
+    'group_mediaset',
+    'all_subattachments',
+    'subattachments',
+    'attachments',
     'short_form_video_context',
     'creation_story',
     'media',
     'story',
   ]);
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[Facebook Extractor Debug]', {
+      canonicalUrl,
+      contentType,
+      jsonScriptCount: jsonObjects.length,
+      gridMediaHits: semanticHits.grid_media?.length || 0,
+      groupMediasetHits: semanticHits.group_mediaset?.length || 0,
+      allSubattachmentsHits: semanticHits.all_subattachments?.length || 0,
+      subattachmentsHits: semanticHits.subattachments?.length || 0,
+    });
+  }
 
   // Extract ID from URL for stable resource identification
   const idMatch =
@@ -449,96 +491,272 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
     canonicalUrl.match(/[?&](?:v|fbid|set=a\.)(\d+)/i);
   const cleanId = idMatch ? idMatch[1] : String(Date.now());
 
-  // ─────────────────────────────────────────────────────────────
-  // 1. ALBUM / PHOTO COLLECTION EXTRACTION
-  // ─────────────────────────────────────────────────────────────
-  if (contentType === 'album' || semanticHits.grid_media?.length > 0) {
-    const gridMediaNodes = semanticHits.grid_media[0] as
-      | { edges?: Array<{ node: { id?: string; accessibility_caption?: string; image?: { uri?: string; width?: number; height?: number } } }> }
+  // Harvest photo candidates from grid_media, group_mediaset, all_subattachments & attachments
+  interface RawPhotoCandidate {
+    id?: string;
+    uri: string;
+    width: number;
+    height: number;
+    caption?: string;
+  }
+
+  const photoCandidates: RawPhotoCandidate[] = [];
+  const candidateSeenUris = new Set<string>();
+
+  const addPhotoCandidate = (rawNode: unknown) => {
+    if (!rawNode || typeof rawNode !== 'object') return;
+    const node = rawNode as Record<string, unknown>;
+    const mediaObj = (node.media && typeof node.media === 'object' ? node.media : node) as Record<string, unknown>;
+
+    const imgObj = (mediaObj.image || mediaObj.photo_image || mediaObj.viewer_image || node.image || node.photo_image || node.viewer_image) as
+      | { uri?: string; width?: number; height?: number }
       | undefined;
 
-    const edges = gridMediaNodes?.edges || [];
-    if (edges.length > 0) {
-      const items: MediaItem[] = [];
-      const seenUris = new Set<string>();
+    const rawUri = imgObj?.uri;
+    if (!rawUri || typeof rawUri !== 'string') return;
 
-      for (let i = 0; i < edges.length; i++) {
-        const photo = edges[i].node;
-        const rawUri = photo.image?.uri;
-        if (!rawUri) continue;
+    const masterUri = stripImageSizingParams(rawUri);
+    if (candidateSeenUris.has(masterUri)) return;
+    candidateSeenUris.add(masterUri);
 
-        const masterUri = stripImageSizingParams(rawUri);
-        if (seenUris.has(masterUri)) continue;
+    photoCandidates.push({
+      id: typeof mediaObj.id === 'string' ? mediaObj.id : typeof node.id === 'string' ? node.id : undefined,
+      uri: rawUri,
+      width: imgObj.width || 2048,
+      height: imgObj.height || 1365,
+      caption: typeof mediaObj.accessibility_caption === 'string' ? mediaObj.accessibility_caption : undefined,
+    });
+  };
+
+  let endCursor = '';
+  let hasNextPage = false;
+
+  // 1. Check grid_media (standard album pages)
+  for (const gm of semanticHits.grid_media) {
+    const gridObj = gm as {
+      edges?: Array<{ node?: unknown }>;
+      page_info?: { end_cursor?: string; has_next_page?: boolean };
+    };
+    if (Array.isArray(gridObj.edges)) {
+      for (const edge of gridObj.edges) {
+        if (edge?.node) addPhotoCandidate(edge.node);
+      }
+    }
+    if (gridObj.page_info) {
+      if (gridObj.page_info.end_cursor) endCursor = gridObj.page_info.end_cursor;
+      if (gridObj.page_info.has_next_page !== undefined) hasNextPage = Boolean(gridObj.page_info.has_next_page);
+    }
+  }
+
+  // 2. Check group_mediaset (group albums / group photo tabs)
+  for (const gms of semanticHits.group_mediaset) {
+    const gmsObj = gms as {
+      media?: {
+        edges?: Array<{ node?: unknown }>;
+        page_info?: { end_cursor?: string; has_next_page?: boolean };
+      };
+    };
+    if (Array.isArray(gmsObj.media?.edges)) {
+      for (const edge of gmsObj.media.edges) {
+        if (edge?.node) addPhotoCandidate(edge.node);
+      }
+    }
+    if (gmsObj.media?.page_info) {
+      if (gmsObj.media.page_info.end_cursor && !endCursor) endCursor = gmsObj.media.page_info.end_cursor;
+      if (gmsObj.media.page_info.has_next_page !== undefined) hasNextPage = Boolean(gmsObj.media.page_info.has_next_page);
+    }
+  }
+
+  // 3. Check all_subattachments & subattachments (multi-photo posts & group posts)
+  for (const sub of [...semanticHits.all_subattachments, ...semanticHits.subattachments]) {
+    const subObj = sub as { nodes?: Array<unknown> };
+    if (Array.isArray(subObj.nodes)) {
+      for (const node of subObj.nodes) {
+        addPhotoCandidate(node);
+      }
+    }
+  }
+
+  // 4. Check attachments (fallback attachment trees)
+  for (const att of semanticHits.attachments) {
+    if (Array.isArray(att)) {
+      for (const item of att) {
+        const itemObj = item as {
+          all_subattachments?: { nodes?: Array<unknown> };
+          subattachments?: { nodes?: Array<unknown> };
+          styles?: { attachment?: { media?: unknown } };
+        };
+        if (Array.isArray(itemObj.all_subattachments?.nodes)) {
+          for (const node of itemObj.all_subattachments.nodes) addPhotoCandidate(node);
+        }
+        if (Array.isArray(itemObj.subattachments?.nodes)) {
+          for (const node of itemObj.subattachments.nodes) addPhotoCandidate(node);
+        }
+        if (itemObj.styles?.attachment?.media) {
+          addPhotoCandidate(itemObj.styles.attachment.media);
+        }
+      }
+    }
+  }
+
+  // 5. Query GraphQL for Album Pagination if more photos exist beyond SSR initial batch
+  if (hasNextPage && endCursor && (contentType === 'album' || photoCandidates.length > 0)) {
+    let pageCount = 1;
+    const MAX_PAGES = 5;
+    const MAX_TOTAL_PHOTOS = 100;
+    const albumTargetId = cleanId;
+
+    while (hasNextPage && endCursor && pageCount <= MAX_PAGES && photoCandidates.length < MAX_TOTAL_PHOTOS) {
+      pageCount++;
+      try {
+        const body = new URLSearchParams();
+        body.append('doc_id', '34407011978913359');
+        body.append('fb_api_req_friendly_name', 'ProfileCometLegacyAlbumGridViewPaginationQuery');
+        body.append(
+          'variables',
+          JSON.stringify({
+            count: 12,
+            cursor: endCursor,
+            id: albumTargetId,
+            scale: 1,
+          })
+        );
+        body.append('server_timestamps', 'true');
+        if (lsdToken) body.append('lsd', lsdToken);
+
+        const gqlRes = await fetch('https://www.facebook.com/api/graphql/', {
+          method: 'POST',
+          headers: {
+            ...FB_GRAPHQL_HEADERS,
+            Referer: canonicalUrl,
+          },
+          body: body.toString(),
+          signal: AbortSignal.timeout(6000),
+        });
+
+        if (!gqlRes.ok) break;
+
+        const text = await gqlRes.text();
+        if (!text.startsWith('{')) break;
+
+        const json = JSON.parse(text.trim().split('\n')[0]);
+        const edges = json.data?.node?.grid_media?.edges;
+        if (!Array.isArray(edges) || edges.length === 0) break;
+
+        for (const edge of edges) {
+          if (edge?.node) addPhotoCandidate(edge.node);
+        }
+
+        const pageInfo = json.data?.node?.grid_media?.page_info;
+        hasNextPage = Boolean(pageInfo?.has_next_page);
+        endCursor = pageInfo?.end_cursor || '';
+      } catch {
+        // Resilient fallback: GraphQL failure never crashes album extraction;
+        // returns whatever photos have already been collected.
+        break;
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 1. ALBUM / MULTI-PHOTO COLLECTION EXTRACTION
+  // ─────────────────────────────────────────────────────────────
+  const isCollectionEligible =
+    (contentType === 'album' && photoCandidates.length > 0) ||
+    photoCandidates.length > 1;
+
+  if (isCollectionEligible) {
+    const items: MediaItem[] = [];
+    const seenUris = new Set<string>();
+
+    const uniqueCandidates: RawPhotoCandidate[] = [];
+    for (const candidate of photoCandidates) {
+      const masterUri = stripImageSizingParams(candidate.uri);
+      if (!seenUris.has(masterUri)) {
         seenUris.add(masterUri);
+        uniqueCandidates.push(candidate);
+      }
+    }
 
-        const bytes = await getRealContentLength(masterUri);
-        const w = photo.image?.width || 2048;
-        const h = photo.image?.height || 1365;
+    // Process file size inspection in parallel batches of 8 for fast throughput
+    const chunkSize = 8;
+    for (let i = 0; i < uniqueCandidates.length; i += chunkSize) {
+      const chunk = uniqueCandidates.slice(i, i + chunkSize);
+      const chunkResults = await Promise.all(
+        chunk.map(async (candidate, idx) => {
+          const masterUri = stripImageSizingParams(candidate.uri);
+          const bytes = await getRealContentLength(masterUri).catch(() => 0);
+          const itemIndex = i + idx + 1;
+          return {
+            id: `fb-photo-${cleanId}-${itemIndex}`,
+            type: 'image' as const,
+            url: masterUri,
+            thumbnail: candidate.uri,
+            resolution: `${candidate.width}x${candidate.height}`,
+            extension: 'JPG',
+            size: formatBytes(bytes),
+            label: `Photo ${itemIndex}`,
+          };
+        })
+      );
+      items.push(...chunkResults);
+    }
 
-        items.push({
-          id: `fb-photo-${cleanId}-${items.length + 1}`,
+    if (items.length > 0) {
+      const formats: MediaFormat[] = [
+        {
+          id: `fb-zip-${cleanId}`,
+          type: 'archive',
+          label: `Full Collection Archive (${items.length} Photos)`,
+          quality: 'Lossless ZIP Package',
+          extension: 'ZIP',
+          size: `${items.length} Files`,
+          downloadUrl: '#zip',
+          isLossless: true,
+        },
+      ];
+
+      for (const item of items) {
+        formats.push({
+          id: item.id,
           type: 'image',
-          url: masterUri,
-          thumbnail: rawUri,
-          resolution: `${w}x${h}`,
+          label: item.label || `Photo ${item.id.split('-').pop()}`,
+          quality: 'Master Asset',
           extension: 'JPG',
-          size: formatBytes(bytes),
-          label: `Photo ${items.length + 1}`,
+          size: item.size || 'Direct Stream',
+          downloadUrl: item.url,
+          isLossless: true,
         });
       }
 
-      if (items.length > 0) {
-        const formats: MediaFormat[] = [
-          {
-            id: `fb-zip-${cleanId}`,
-            type: 'archive',
-            label: `Full Collection Archive (${items.length} Photos)`,
-            quality: 'Lossless ZIP Package',
-            extension: 'ZIP',
-            size: `${items.length} Files`,
-            downloadUrl: '#zip',
-            isLossless: true,
-          },
-        ];
+      const authorName = ogDetails.author || 'Facebook Creator';
+      const title =
+        ogDetails.cleanTitle ||
+        og.description ||
+        photoCandidates[0]?.caption ||
+        `Facebook Photo Album (${items.length} Photos)`;
 
-        for (const item of items) {
-          formats.push({
-            id: item.id,
-            type: 'image',
-            label: item.label || `Photo ${item.id.split('-').pop()}`,
-            quality: 'Master Asset',
-            extension: 'JPG',
-            size: item.size || 'Direct Stream',
-            downloadUrl: item.url,
-            isLossless: true,
-          });
-        }
-
-        const authorName = ogDetails.author || 'Facebook Creator';
-        const title = ogDetails.cleanTitle || og.description || `Facebook Photo Album (${items.length} Photos)`;
-
-        return {
-          id: `fb-${cleanId}`,
-          originalUrl: canonicalUrl,
-          platform: 'facebook',
-          title,
-          description: og.description,
-          author: {
-            name: authorName,
-            handle: `@${authorName.toLowerCase().replace(/[^a-z0-9_.]/g, '')}`,
-          },
-          thumbnail: items[0].thumbnail || items[0].url,
-          extractedAt: new Date().toISOString(),
-          formats,
-          items,
-          isCollection: true,
-          itemCount: items.length,
-          stats: {
-            views: ogDetails.views,
-            likes: ogDetails.likes,
-          },
-        };
-      }
+      return {
+        id: `fb-${cleanId}`,
+        originalUrl: canonicalUrl,
+        platform: 'facebook',
+        title,
+        description: og.description || photoCandidates[0]?.caption,
+        author: {
+          name: authorName,
+          handle: `@${authorName.toLowerCase().replace(/[^a-z0-9_.]/g, '')}`,
+        },
+        thumbnail: items[0].thumbnail || items[0].url,
+        extractedAt: new Date().toISOString(),
+        formats,
+        items,
+        isCollection: true,
+        itemCount: items.length,
+        stats: {
+          views: ogDetails.views,
+          likes: ogDetails.likes,
+        },
+      };
     }
   }
 
@@ -676,10 +894,20 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
   let photoCaption: string | undefined;
   let photoAuthor: string | undefined;
 
+  // First check any single photo candidate discovered
+  if (photoCandidates.length > 0) {
+    rawPhotoUri = photoCandidates[0].uri;
+    photoWidth = photoCandidates[0].width;
+    photoHeight = photoCandidates[0].height;
+    photoCaption = photoCandidates[0].caption;
+  }
+
   // Try currMedia from parsed JSON
-  if (semanticHits.currMedia?.length > 0) {
+  if (!rawPhotoUri && semanticHits.currMedia?.length > 0) {
     const curr = semanticHits.currMedia[0] as {
       image?: { uri?: string; width?: number; height?: number };
+      photo_image?: { uri?: string; width?: number; height?: number };
+      viewer_image?: { uri?: string; width?: number; height?: number };
       accessibility_caption?: string;
       creation_story?: {
         message?: { text?: string };
@@ -687,10 +915,11 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
       };
     };
 
-    if (curr.image?.uri) {
-      rawPhotoUri = curr.image.uri;
-      if (curr.image.width) photoWidth = curr.image.width;
-      if (curr.image.height) photoHeight = curr.image.height;
+    const imgObj = curr.image || curr.photo_image || curr.viewer_image;
+    if (imgObj?.uri) {
+      rawPhotoUri = imgObj.uri;
+      if (imgObj.width) photoWidth = imgObj.width;
+      if (imgObj.height) photoHeight = imgObj.height;
     }
     photoCaption = curr.accessibility_caption || curr.creation_story?.message?.text;
     photoAuthor = curr.creation_story?.actors?.[0]?.name;

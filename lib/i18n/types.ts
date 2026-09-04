@@ -35,6 +35,12 @@ export interface TranslationDictionary {
     downloadAllZip: string;
     downloadAllZipCard: string;
     downloadAllZipDesc: string;
+    videoHdZipCard: string;
+    videoHdZipDesc: string;
+    videoSdZipCard: string;
+    videoSdZipDesc: string;
+    videoEverythingZipCard: string;
+    videoEverythingZipDesc: string;
     everythingZipCard: string;
     everythingZipDesc: string;
     selectPhotos: string;
