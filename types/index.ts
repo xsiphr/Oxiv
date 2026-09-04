@@ -91,3 +91,26 @@ export interface ApiErrorResponse {
 }
 
 export type ApiResponse = ApiSuccessResponse | ApiErrorResponse;
+
+// ─── Client-Side ZIP Progress Types ───
+export type ZipStage = 'fetching' | 'compressing' | 'saving' | 'done' | 'error';
+
+export interface ZipProgressState {
+  stage: ZipStage;
+  itemIndex: number;
+  totalItems: number;
+  itemKind: 'video' | 'audio' | 'photo' | 'file';
+  currentBytes?: number;
+  totalBytes?: number;
+  percent?: number;
+  displayText: string;
+}
+
+export type CardDownloadStatus = 'idle' | 'loading' | 'saved' | 'error';
+
+export interface CardDownloadState {
+  status: CardDownloadStatus;
+  progress?: ZipProgressState;
+  error?: string;
+}
+

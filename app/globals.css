@@ -138,3 +138,25 @@ body {
 .animate-fadeIn {
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Firefox (Gecko) & WebKit resilient aspect-ratio grid item */
+.aspect-square-grid-item {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-square-grid-item::before {
+  content: "";
+  display: block;
+  padding-bottom: 100%;
+}
+
+.aspect-square-grid-item > img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

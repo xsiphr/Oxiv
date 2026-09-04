@@ -98,6 +98,8 @@ export async function GET(request: NextRequest) {
     headers.set('Content-Disposition', `attachment; filename="${sanitizedFilename}"; filename*=UTF-8''${encodeURIComponent(sanitizedFilename)}`);
     headers.set('Content-Type', contentType);
     headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Disposition');
     if (contentLength) {
       headers.set('Content-Length', contentLength);
     }
