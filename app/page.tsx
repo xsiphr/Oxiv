@@ -20,6 +20,42 @@ import { useRecentSearches } from '@/hooks/useRecentSearches';
 import { PageSkeleton } from '@/components/ui/PageSkeleton';
 import { useI18n } from '@/lib/i18n';
 
+// Custom silky-smooth easing scroll with controlled duration and navbar offset
+function smoothScrollTo(targetY: number, duration: number = 800) {
+  if (typeof window === 'undefined') return;
+
+  const startY = window.scrollY || window.pageYOffset;
+  const distance = targetY - startY;
+  if (Math.abs(distance) < 2) return;
+
+  const startTime = performance.now();
+
+  const easeInOutCubic = (t: number) =>
+    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  const step = (currentTime: number) => {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeProgress = easeInOutCubic(progress);
+
+    window.scrollTo(0, startY + distance * easeProgress);
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  };
+
+  requestAnimationFrame(step);
+}
+
+const scrollToElement = (element: HTMLElement | null, duration: number = 850, offset: number = 76) => {
+  if (!element || typeof window === 'undefined') return;
+  const elementRect = element.getBoundingClientRect();
+  const absoluteTop = elementRect.top + window.pageYOffset;
+  const targetY = Math.max(0, absoluteTop - offset);
+  smoothScrollTo(targetY, duration);
+};
+
 export default function Home() {
   const { t } = useI18n();
   const [isReady, setIsReady] = useState(false);
@@ -32,7 +68,31 @@ export default function Home() {
   const [extractionError, setExtractionError] = useState<ExtractionError | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
 
+  const terminalRef = React.useRef<HTMLElement>(null);
+  const previewRef = React.useRef<HTMLDivElement>(null);
+  const errorRef = React.useRef<HTMLElement>(null);
+
   const { recents, isLoaded, addRecent, removeRecent, clearRecents } = useRecentSearches();
+
+  // Gentle, cinematic auto-scroll to corresponding section during extraction lifecycle
+  useEffect(() => {
+    if (status === 'extracting') {
+      const timer = setTimeout(() => {
+        scrollToElement(terminalRef.current, 750, 80);
+      }, 120);
+      return () => clearTimeout(timer);
+    } else if (status === 'success') {
+      const timer = setTimeout(() => {
+        scrollToElement(previewRef.current, 850, 76);
+      }, 160);
+      return () => clearTimeout(timer);
+    } else if (status === 'error') {
+      const timer = setTimeout(() => {
+        scrollToElement(errorRef.current, 800, 76);
+      }, 160);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
 
   // Force scroll to top and ensure fonts are ready with smooth progressive blueprint drawing
   useEffect(() => {
@@ -138,7 +198,7 @@ export default function Home() {
         ]);
 
         // Step 3: READY finishes near-instant state transition
-        await new Promise((r) => setTimeout(r, 240));
+        await new Promise((r) => setTimeout(r, 260));
         const readyLatency = Math.max(1, Math.round(performance.now() - (fetchStartTime + fetchLatency)));
 
         setSteps([
@@ -159,7 +219,7 @@ export default function Home() {
           },
         ]);
 
-        await new Promise((r) => setTimeout(r, 200));
+        await new Promise((r) => setTimeout(r, 320));
         setMediaResult(json.data);
         setStatus('success');
         addRecent({
@@ -231,6 +291,7 @@ export default function Home() {
     setCurrentPlatform('unknown');
     setSteps([]);
     setResetSignal((prev) => prev + 1);
+    smoothScrollTo(0, 700);
   };
 
   // Keyboard shortcut: Escape to reset from both success and error states
@@ -280,9 +341,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Real-time Extraction Terminal Stream */}
-        {status === 'extracting' && steps.length > 0 && (
-          <section className="w-full">
+        {/* Real-time Extraction Terminal Stream (Kept visible after extraction) */}
+        {steps.length > 0 && (
+          <section ref={terminalRef} className="w-full scroll-mt-20">
             <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 pb-14 w-full animate-fadeIn">
               <TerminalStream
                 steps={steps}
@@ -295,7 +356,7 @@ export default function Home() {
 
         {/* 3. Diagnostic Card State on Error (Full-width border-t) */}
         {status === 'error' && extractionError && (
-          <section className="w-full">
+          <section ref={errorRef} className="w-full scroll-mt-20">
             <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 pb-14 w-full animate-fadeIn">
               <DiagnosticCard
                 error={extractionError}
@@ -308,7 +369,9 @@ export default function Home() {
 
         {/* 4. Media Result Preview State (Full-width border-t) */}
         {status === 'success' && mediaResult && (
-          <MediaPreview media={mediaResult} onReset={handleReset} />
+          <div ref={previewRef} className="w-full scroll-mt-20">
+            <MediaPreview media={mediaResult} onReset={handleReset} />
+          </div>
         )}
 
         {/* 5. Metrics & Performance Figures Grid (Full-width border-y) */}
