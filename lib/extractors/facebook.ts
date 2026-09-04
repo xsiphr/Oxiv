@@ -134,8 +134,8 @@ export function identifyFacebookContentType(url: string): FacebookContentType {
 
   // 3. Album / Mediaset (Page album, Group album, /media/set/, /photos/albums/, /albums/, /photos/a.)
   if (
-    /\/media\/set\/?\?set=a\.\d+/i.test(clean) ||
-    /set=a\.\d+/i.test(clean) ||
+    /\/media\/set\/?\?set=[a-z0-9_.]+/i.test(clean) ||
+    /set=(?:a|pcb)\.\d+/i.test(clean) ||
     /\/photos\/albums\/\d+/i.test(clean) ||
     /\/albums\/\d+/i.test(clean) ||
     /\/photos\/a\.\d+/i.test(clean)
@@ -464,6 +464,7 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
     'currMedia',
     'grid_media',
     'group_mediaset',
+    'album',
     'all_subattachments',
     'subattachments',
     'attachments',
@@ -488,7 +489,7 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
   // Extract ID from URL for stable resource identification
   const idMatch =
     canonicalUrl.match(/(?:videos|reel|photos|posts)\/([0-9a-zA-Z_.-]+)/i) ||
-    canonicalUrl.match(/[?&](?:v|fbid|set=a\.)(\d+)/i);
+    canonicalUrl.match(/[?&](?:v|fbid|set=(?:a|pcb)\.)(\d+)/i);
   const cleanId = idMatch ? idMatch[1] : String(Date.now());
 
   // Harvest photo candidates from grid_media, group_mediaset, all_subattachments & attachments
@@ -501,7 +502,16 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
   }
 
   const photoCandidates: RawPhotoCandidate[] = [];
-  const candidateSeenUris = new Set<string>();
+  const candidateSeenKeys = new Set<string>();
+
+  const getDedupKey = (id: string | undefined, uri: string): string => {
+    if (id) return `id:${id}`;
+    try {
+      return `path:${new URL(uri).pathname}`;
+    } catch {
+      return uri;
+    }
+  };
 
   const addPhotoCandidate = (rawNode: unknown) => {
     if (!rawNode || typeof rawNode !== 'object') return;
@@ -515,12 +525,13 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
     const rawUri = imgObj?.uri;
     if (!rawUri || typeof rawUri !== 'string') return;
 
-    const masterUri = stripImageSizingParams(rawUri);
-    if (candidateSeenUris.has(masterUri)) return;
-    candidateSeenUris.add(masterUri);
+    const photoId = typeof mediaObj.id === 'string' ? mediaObj.id : typeof node.id === 'string' ? node.id : undefined;
+    const dedupKey = getDedupKey(photoId, rawUri);
+    if (candidateSeenKeys.has(dedupKey)) return;
+    candidateSeenKeys.add(dedupKey);
 
     photoCandidates.push({
-      id: typeof mediaObj.id === 'string' ? mediaObj.id : typeof node.id === 'string' ? node.id : undefined,
+      id: photoId,
       uri: rawUri,
       width: imgObj.width || 2048,
       height: imgObj.height || 1365,
@@ -567,7 +578,26 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
     }
   }
 
-  // 3. Check all_subattachments & subattachments (multi-photo posts & group posts)
+  // 3. Check album (for pcb mediaset albums or standard album structures)
+  for (const alb of semanticHits.album) {
+    const albObj = alb as {
+      media?: {
+        edges?: Array<{ node?: unknown }>;
+        page_info?: { end_cursor?: string; has_next_page?: boolean };
+      };
+    };
+    if (Array.isArray(albObj.media?.edges)) {
+      for (const edge of albObj.media.edges) {
+        if (edge?.node) addPhotoCandidate(edge.node);
+      }
+    }
+    if (albObj.media?.page_info) {
+      if (albObj.media.page_info.end_cursor && !endCursor) endCursor = albObj.media.page_info.end_cursor;
+      if (albObj.media.page_info.has_next_page !== undefined) hasNextPage = Boolean(albObj.media.page_info.has_next_page);
+    }
+  }
+
+  // 4. Check all_subattachments & subattachments (multi-photo posts & group posts)
   for (const sub of [...semanticHits.all_subattachments, ...semanticHits.subattachments]) {
     const subObj = sub as { nodes?: Array<unknown> };
     if (Array.isArray(subObj.nodes)) {
@@ -577,7 +607,7 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
     }
   }
 
-  // 4. Check attachments (fallback attachment trees)
+  // 5. Check attachments (fallback attachment trees)
   for (const att of semanticHits.attachments) {
     if (Array.isArray(att)) {
       for (const item of att) {
@@ -599,7 +629,88 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
     }
   }
 
-  // 5. Query GraphQL for Album Pagination if more photos exist beyond SSR initial batch
+  // 6. Multi-photo Post Subattachments Expansion via mediaset_token:
+  // Regular Facebook posts with >5 photos truncate all_subattachments in the post's Comet feed story,
+  // creating a post-created batch ("pcb") mediaset. We expand this by querying the mediaset URL.
+  const mediasetTokenMatch = html.match(/"mediaset_token"\s*:\s*"([^"]+)"/);
+  const countMatch = html.match(/"all_subattachments"\s*:\s*\{\s*"count"\s*:\s*(\d+)/);
+  const totalSubCount = countMatch ? parseInt(countMatch[1], 10) : 0;
+  const mediasetToken = mediasetTokenMatch ? mediasetTokenMatch[1] : null;
+
+  if (mediasetToken && (totalSubCount === 0 || totalSubCount > photoCandidates.length)) {
+    try {
+      const mediasetUrl = `https://www.facebook.com/media/set/?set=${encodeURIComponent(mediasetToken)}`;
+      const { html: mHtml } = await fetchFacebookHtml(mediasetUrl);
+      const mJsonObjects = extractBboxJsonObjects(mHtml);
+      const mSemanticHits = findSemanticKeys(mJsonObjects, [
+        'grid_media',
+        'group_mediaset',
+        'album',
+        'all_subattachments',
+        'subattachments',
+        'attachments',
+      ]);
+
+      // Harvest from album.media.edges
+      for (const alb of mSemanticHits.album) {
+        const albObj = alb as {
+          media?: {
+            edges?: Array<{ node?: unknown }>;
+            page_info?: { end_cursor?: string; has_next_page?: boolean };
+          };
+        };
+        if (Array.isArray(albObj.media?.edges)) {
+          for (const edge of albObj.media.edges) {
+            if (edge?.node) addPhotoCandidate(edge.node);
+          }
+        }
+        if (albObj.media?.page_info) {
+          if (albObj.media.page_info.end_cursor && !endCursor) endCursor = albObj.media.page_info.end_cursor;
+          if (albObj.media.page_info.has_next_page !== undefined) hasNextPage = Boolean(albObj.media.page_info.has_next_page);
+        }
+      }
+
+      // Harvest from grid_media
+      for (const gm of mSemanticHits.grid_media) {
+        const gridObj = gm as {
+          edges?: Array<{ node?: unknown }>;
+          page_info?: { end_cursor?: string; has_next_page?: boolean };
+        };
+        if (Array.isArray(gridObj.edges)) {
+          for (const edge of gridObj.edges) {
+            if (edge?.node) addPhotoCandidate(edge.node);
+          }
+        }
+        if (gridObj.page_info) {
+          if (gridObj.page_info.end_cursor && !endCursor) endCursor = gridObj.page_info.end_cursor;
+          if (gridObj.page_info.has_next_page !== undefined) hasNextPage = Boolean(gridObj.page_info.has_next_page);
+        }
+      }
+
+      // Harvest from group_mediaset
+      for (const gms of mSemanticHits.group_mediaset) {
+        const gmsObj = gms as {
+          media?: {
+            edges?: Array<{ node?: unknown }>;
+            page_info?: { end_cursor?: string; has_next_page?: boolean };
+          };
+        };
+        if (Array.isArray(gmsObj.media?.edges)) {
+          for (const edge of gmsObj.media.edges) {
+            if (edge?.node) addPhotoCandidate(edge.node);
+          }
+        }
+        if (gmsObj.media?.page_info) {
+          if (gmsObj.media.page_info.end_cursor && !endCursor) endCursor = gmsObj.media.page_info.end_cursor;
+          if (gmsObj.media.page_info.has_next_page !== undefined) hasNextPage = Boolean(gmsObj.media.page_info.has_next_page);
+        }
+      }
+    } catch {
+      // Graceful fallback: If mediaset fetching fails, retain initially extracted subattachments
+    }
+  }
+
+  // 7. Query GraphQL for Album Pagination if more photos exist beyond SSR initial batch
   if (hasNextPage && endCursor && (contentType === 'album' || photoCandidates.length > 0)) {
     let pageCount = 1;
     const MAX_PAGES = 5;
@@ -667,13 +778,14 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
 
   if (isCollectionEligible) {
     const items: MediaItem[] = [];
-    const seenUris = new Set<string>();
-
+    const seenCandidateKeys = new Set<string>();
     const uniqueCandidates: RawPhotoCandidate[] = [];
+
     for (const candidate of photoCandidates) {
       const masterUri = stripImageSizingParams(candidate.uri);
-      if (!seenUris.has(masterUri)) {
-        seenUris.add(masterUri);
+      const dedupKey = candidate.id ? `id:${candidate.id}` : `uri:${masterUri}`;
+      if (!seenCandidateKeys.has(dedupKey)) {
+        seenCandidateKeys.add(dedupKey);
         uniqueCandidates.push(candidate);
       }
     }
