@@ -10,9 +10,17 @@ export const metadata: Metadata = {
 // Next.js Route Segment Config: Revalidate every hour (3600 seconds) via ISR
 export const revalidate = 3600;
 
-async function getCommits(): Promise<{ commits: GitHubCommitData[]; error: string | null }> {
+interface ActivityPageProps {
+  searchParams: Promise<{ year?: string }>;
+}
+
+async function getCommits(year: number): Promise<{ commits: GitHubCommitData[]; error: string | null }> {
   try {
-    const res = await fetch('https://api.github.com/repos/xsiphr/Oxiv/commits?per_page=100', {
+    const since = `${year}-01-01T00:00:00Z`;
+    const until = `${year}-12-31T23:59:59Z`;
+    const url = `https://api.github.com/repos/xsiphr/Oxiv/commits?since=${encodeURIComponent(since)}&until=${encodeURIComponent(until)}&per_page=100`;
+
+    const res = await fetch(url, {
       headers: {
         Accept: 'application/vnd.github.v3+json',
         'User-Agent': 'Oxiv-App',
@@ -42,8 +50,43 @@ async function getCommits(): Promise<{ commits: GitHubCommitData[]; error: strin
   }
 }
 
-export default async function ActivityPage() {
-  const { commits, error } = await getCommits();
+export default async function ActivityPage({ searchParams }: ActivityPageProps) {
+  const params = await searchParams;
+  const currentYear = new Date().getFullYear();
+  const repoStartYear = 2026;
 
-  return <ActivityView commits={commits} error={error} />;
+  const parsedYear = params?.year ? parseInt(params.year, 10) : currentYear;
+  const selectedYear =
+    !isNaN(parsedYear) && parsedYear >= repoStartYear && parsedYear <= currentYear
+      ? parsedYear
+      : currentYear;
+
+  const { commits, error } = await getCommits(selectedYear);
+
+  // Available years: dynamically compute from currentYear down to repoStartYear (2026)
+  const availableYears: number[] = [];
+  for (let y = currentYear; y >= repoStartYear; y--) {
+    availableYears.push(y);
+  }
+
+  // Also include any years present in commits (future-proof)
+  commits.forEach((c) => {
+    const d = c.commit?.author?.date || c.commit?.committer?.date;
+    if (d) {
+      const yr = new Date(d).getFullYear();
+      if (!isNaN(yr) && !availableYears.includes(yr)) {
+        availableYears.push(yr);
+      }
+    }
+  });
+  availableYears.sort((a, b) => b - a);
+
+  return (
+    <ActivityView
+      commits={commits}
+      error={error}
+      selectedYear={selectedYear}
+      availableYears={availableYears}
+    />
+  );
 }

@@ -42,19 +42,24 @@ export interface GitHubCommitData {
 interface ActivityViewProps {
   commits: GitHubCommitData[];
   error?: string | null;
+  selectedYear?: number;
+  availableYears?: number[];
 }
 
-const WEEKS_COUNT = 53; // GitHub standard 52-53 weeks
 const CELL_SIZE = 10;
 const CELL_GAP = 3;
 const CELL_STEP = CELL_SIZE + CELL_GAP; // 13px
 const DAY_LABEL_WIDTH = 28;
 const MONTH_LABEL_HEIGHT = 18;
-const SVG_WIDTH = DAY_LABEL_WIDTH + WEEKS_COUNT * CELL_STEP; // 717px
 const SVG_HEIGHT = MONTH_LABEL_HEIGHT + 7 * CELL_STEP; // 109px
 const INITIAL_VISIBLE_COMMITS = 5;
 
-export function ActivityView({ commits, error }: ActivityViewProps) {
+export function ActivityView({
+  commits,
+  error,
+  selectedYear,
+  availableYears,
+}: ActivityViewProps) {
   const { t, locale } = useI18n();
   const [isExpanded, setIsExpanded] = useState(false);
   const [tooltip, setTooltip] = useState<{
@@ -64,6 +69,11 @@ export function ActivityView({ commits, error }: ActivityViewProps) {
   } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const currentYear = new Date().getFullYear();
+  const activeYear = selectedYear || currentYear;
+  const yearsList =
+    availableYears && availableYears.length > 0 ? availableYears : [activeYear];
 
   // Group commits by YYYY-MM-DD
   const commitCountByDate: Record<string, number> = {};
@@ -75,16 +85,41 @@ export function ActivityView({ commits, error }: ActivityViewProps) {
     }
   });
 
-  // Calculate 53 weeks ending on current Saturday
+  // Calculate calendar range
   const today = new Date();
-  const endDay = new Date(today);
-  endDay.setDate(today.getDate() + (6 - today.getDay()));
-  endDay.setHours(23, 59, 59, 999);
+  let startDay: Date;
+  let endDay: Date;
+  let weeksCount: number;
 
-  const totalDays = WEEKS_COUNT * 7;
-  const startDay = new Date(endDay);
-  startDay.setDate(endDay.getDate() - totalDays + 1);
-  startDay.setHours(0, 0, 0, 0);
+  if (activeYear === currentYear) {
+    // Current year: rolling 53 weeks ending on current week's Saturday
+    endDay = new Date(today);
+    endDay.setDate(today.getDate() + (6 - today.getDay()));
+    endDay.setHours(23, 59, 59, 999);
+
+    weeksCount = 53;
+    const totalDays = weeksCount * 7;
+    startDay = new Date(endDay);
+    startDay.setDate(endDay.getDate() - totalDays + 1);
+    startDay.setHours(0, 0, 0, 0);
+  } else {
+    // Past year: full calendar Jan 1 to Dec 31
+    const jan1 = new Date(activeYear, 0, 1);
+    startDay = new Date(jan1);
+    startDay.setDate(jan1.getDate() - jan1.getDay());
+    startDay.setHours(0, 0, 0, 0);
+
+    const dec31 = new Date(activeYear, 11, 31);
+    endDay = new Date(dec31);
+    endDay.setDate(dec31.getDate() + (6 - dec31.getDay()));
+    endDay.setHours(23, 59, 59, 999);
+
+    const diffMs = endDay.getTime() - startDay.getTime();
+    const totalDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+    weeksCount = Math.ceil(totalDays / 7);
+  }
+
+  const svgWidth = DAY_LABEL_WIDTH + weeksCount * CELL_STEP;
 
   interface DayCell {
     dateStr: string;
@@ -103,11 +138,10 @@ export function ActivityView({ commits, error }: ActivityViewProps) {
   let lastMonth = -1;
   let lastMonthCol = -3;
 
-  for (let w = 0; w < WEEKS_COUNT; w++) {
+  for (let w = 0; w < weeksCount; w++) {
     const week: DayCell[] = [];
     const firstDayOfWeek = new Date(cur);
 
-    // If month changes and enough gap from last label
     if (firstDayOfWeek.getMonth() !== lastMonth && w - lastMonthCol >= 2) {
       lastMonth = firstDayOfWeek.getMonth();
       lastMonthCol = w;
@@ -286,181 +320,216 @@ export function ActivityView({ commits, error }: ActivityViewProps) {
           </section>
         ) : (
           <>
-            {/* Rebuilt Contribution Heatmap Section (GitHub Style) */}
+            {/* Heatmap Section: Side-by-side on desktop, stacked on mobile */}
             <section className="w-full border-t border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas)]">
-              <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h2 className="font-display text-xl sm:text-2xl font-bold text-[var(--colors-ink)] tracking-tight">
-                      {t.activity.heatmapTitle}
-                    </h2>
-                    <p className="font-body text-xs text-[var(--colors-muted)] mt-0.5">
-                      {t.activity.heatmapSubtitle}
-                    </p>
-                  </div>
-
-                  {/* Heatmap Swatches Legend */}
-                  <div className="flex items-center gap-2 font-mono text-xs text-[var(--colors-muted)] self-start sm:self-auto select-none">
-                    <span>{t.activity.legendLess}</span>
-                    <div className="flex items-center gap-1">
-                      <div
-                        className="w-3 h-3 rounded-[2px]"
-                        style={{
-                          backgroundColor: 'var(--heatmap-l0)',
-                          border: '1px solid var(--heatmap-l0-border)',
-                        }}
-                        title="0 commits"
-                      />
-                      <div
-                        className="w-3 h-3 rounded-[2px]"
-                        style={{ backgroundColor: 'var(--heatmap-l1)' }}
-                        title="1 commit"
-                      />
-                      <div
-                        className="w-3 h-3 rounded-[2px]"
-                        style={{ backgroundColor: 'var(--heatmap-l2)' }}
-                        title="2 commits"
-                      />
-                      <div
-                        className="w-3 h-3 rounded-[2px]"
-                        style={{ backgroundColor: 'var(--heatmap-l3)' }}
-                        title="3-4 commits"
-                      />
-                      <div
-                        className="w-3 h-3 rounded-[2px]"
-                        style={{ backgroundColor: 'var(--heatmap-l4)' }}
-                        title="5+ commits"
-                      />
-                    </div>
-                    <span>{t.activity.legendMore}</span>
-                  </div>
+              <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-4">
+                {/* Section Header */}
+                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                  <h2 className="font-display text-xl sm:text-2xl font-bold text-[var(--colors-ink)] tracking-tight">
+                    {commits.length} {commits.length === 1 ? 'contribution' : 'contributions'} in {activeYear}
+                  </h2>
+                  <span className="font-mono text-xs text-[var(--colors-muted)]">
+                    {t.activity.heatmapTitle}
+                  </span>
                 </div>
 
-                {/* Heatmap Card with Horizontal Scrolling for Mobile */}
-                <div
-                  ref={containerRef}
-                  className="relative bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] rounded-xl p-4 sm:p-6 shadow-xs"
-                >
-                  {/* Floating tooltip on hover */}
-                  {tooltip && (
+                {/* Main Split Layout: Left Heatmap Grid + Right Year Selector */}
+                <div className="flex flex-col md:flex-row gap-5 lg:gap-6 items-start">
+                  {/* Left (Main Area): Sized naturally, not stretched */}
+                  <div className="flex-1 min-w-0 w-full">
                     <div
-                      style={{
-                        left: tooltip.x,
-                        top: tooltip.y,
-                        transform: 'translate(-50%, -120%)',
-                      }}
-                      className="pointer-events-none absolute z-30 px-2.5 py-1 rounded bg-[var(--colors-ink)] text-[var(--colors-canvas)] font-mono text-[11px] font-medium shadow-lg whitespace-nowrap animate-fadeIn"
+                      ref={containerRef}
+                      className="relative bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] rounded-xl p-4 sm:p-5 shadow-xs"
                     >
-                      {tooltip.text}
+                      {/* Floating tooltip on hover */}
+                      {tooltip && (
+                        <div
+                          style={{
+                            left: tooltip.x,
+                            top: tooltip.y,
+                            transform: 'translate(-50%, -120%)',
+                          }}
+                          className="pointer-events-none absolute z-30 px-2.5 py-1 rounded bg-[var(--colors-ink)] text-[var(--colors-canvas)] font-mono text-[11px] font-medium shadow-lg whitespace-nowrap animate-fadeIn"
+                        >
+                          {tooltip.text}
+                        </div>
+                      )}
+
+                      {/* Horizontally scrollable wrapper */}
+                      <div className="overflow-x-auto overflow-y-hidden pb-1 -mx-1 px-1 scrollbar-thin">
+                        <div dir="ltr" className="min-w-fit">
+                          <svg
+                            width={svgWidth}
+                            height={SVG_HEIGHT}
+                            viewBox={`0 0 ${svgWidth} ${SVG_HEIGHT}`}
+                            className="overflow-visible select-none max-w-none block"
+                          >
+                            {/* Month labels along the top */}
+                            {monthLabels.map((m, idx) => (
+                              <text
+                                key={idx}
+                                x={m.x}
+                                y={11}
+                                className="font-mono text-[10px] fill-[var(--colors-muted)]"
+                              >
+                                {m.label}
+                              </text>
+                            ))}
+
+                            {/* Day of week labels on left (Mon, Wed, Fri) */}
+                            <text
+                              x={0}
+                              y={MONTH_LABEL_HEIGHT + 1 * CELL_STEP + 8}
+                              className="font-mono text-[9px] fill-[var(--colors-muted)]"
+                            >
+                              Mon
+                            </text>
+                            <text
+                              x={0}
+                              y={MONTH_LABEL_HEIGHT + 3 * CELL_STEP + 8}
+                              className="font-mono text-[9px] fill-[var(--colors-muted)]"
+                            >
+                              Wed
+                            </text>
+                            <text
+                              x={0}
+                              y={MONTH_LABEL_HEIGHT + 5 * CELL_STEP + 8}
+                              className="font-mono text-[9px] fill-[var(--colors-muted)]"
+                            >
+                              Fri
+                            </text>
+
+                            {/* Weeks columns & Day rects */}
+                            {weeks.map((week, wIdx) => (
+                              <g
+                                key={wIdx}
+                                transform={`translate(${DAY_LABEL_WIDTH + wIdx * CELL_STEP}, ${MONTH_LABEL_HEIGHT})`}
+                              >
+                                {week.map((cell) => {
+                                  let fillColor = 'var(--heatmap-l0)';
+                                  let strokeColor: string | undefined =
+                                    'var(--heatmap-l0-border)';
+
+                                  if (cell.intensity === 1) {
+                                    fillColor = 'var(--heatmap-l1)';
+                                    strokeColor = undefined;
+                                  } else if (cell.intensity === 2) {
+                                    fillColor = 'var(--heatmap-l2)';
+                                    strokeColor = undefined;
+                                  } else if (cell.intensity === 3) {
+                                    fillColor = 'var(--heatmap-l3)';
+                                    strokeColor = undefined;
+                                  } else if (cell.intensity === 4) {
+                                    fillColor = 'var(--heatmap-l4)';
+                                    strokeColor = undefined;
+                                  }
+
+                                  const yPos = cell.row * CELL_STEP;
+
+                                  return (
+                                    <rect
+                                      key={cell.dateStr}
+                                      x={0}
+                                      y={yPos}
+                                      width={CELL_SIZE}
+                                      height={CELL_SIZE}
+                                      rx={2}
+                                      ry={2}
+                                      fill={fillColor}
+                                      stroke={strokeColor}
+                                      strokeWidth={strokeColor ? 1 : 0}
+                                      opacity={cell.isFuture ? 0.25 : 1}
+                                      className={
+                                        cell.isFuture
+                                          ? 'cursor-default'
+                                          : 'cursor-pointer hover:stroke-[var(--colors-ink)] hover:stroke-[1.5px] transition-all'
+                                      }
+                                      onMouseEnter={(e) =>
+                                        handleCellMouseEnter(e, cell)
+                                      }
+                                      onMouseLeave={handleCellMouseLeave}
+                                    >
+                                      <title>
+                                        {t.activity.commitsTooltip(
+                                          cell.count,
+                                          cell.dateStr
+                                        )}
+                                      </title>
+                                    </rect>
+                                  );
+                                })}
+                              </g>
+                            ))}
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Card Footer: Subtitle Note & Intensity Legend */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-2 text-xs font-mono text-[var(--colors-muted)] select-none border-t border-dashed border-[var(--colors-hairline)]">
+                        <span className="text-[11px] opacity-75">
+                          {activeYear === currentYear
+                            ? 'Recent rolling 52-week activity'
+                            : `Full calendar year ${activeYear}`}
+                        </span>
+
+                        {/* Intensity Swatches */}
+                        <div className="flex items-center gap-2">
+                          <span>{t.activity.legendLess}</span>
+                          <div className="flex items-center gap-1">
+                            <div
+                              className="w-3 h-3 rounded-[2px]"
+                              style={{
+                                backgroundColor: 'var(--heatmap-l0)',
+                                border: '1px solid var(--heatmap-l0-border)',
+                              }}
+                              title="0 commits"
+                            />
+                            <div
+                              className="w-3 h-3 rounded-[2px]"
+                              style={{ backgroundColor: 'var(--heatmap-l1)' }}
+                              title="1 commit"
+                            />
+                            <div
+                              className="w-3 h-3 rounded-[2px]"
+                              style={{ backgroundColor: 'var(--heatmap-l2)' }}
+                              title="2 commits"
+                            />
+                            <div
+                              className="w-3 h-3 rounded-[2px]"
+                              style={{ backgroundColor: 'var(--heatmap-l3)' }}
+                              title="3-4 commits"
+                            />
+                            <div
+                              className="w-3 h-3 rounded-[2px]"
+                              style={{ backgroundColor: 'var(--heatmap-l4)' }}
+                              title="5+ commits"
+                            />
+                          </div>
+                          <span>{t.activity.legendMore}</span>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Horizontally scrollable wrapper */}
-                  <div className="overflow-x-auto overflow-y-hidden pb-1 -mx-1 px-1 scrollbar-thin">
-                    <div dir="ltr" className="min-w-fit">
-                      <svg
-                        width={SVG_WIDTH}
-                        height={SVG_HEIGHT}
-                        viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-                        className="overflow-visible select-none max-w-none block"
-                      >
-                        {/* Month labels along the top */}
-                        {monthLabels.map((m, idx) => (
-                          <text
-                            key={idx}
-                            x={m.x}
-                            y={11}
-                            className="font-mono text-[10px] fill-[var(--colors-muted)]"
+                  {/* Right Column (Desktop) / Bottom Row (Mobile): Year Selector */}
+                  <div className="w-full md:w-28 lg:w-32 shrink-0">
+                    <div className="flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-visible pb-1 md:pb-0">
+                      {yearsList.map((yr) => {
+                        const isSelected = yr === activeYear;
+                        return (
+                          <Link
+                            key={yr}
+                            href={`/activity?year=${yr}`}
+                            className={`font-mono text-xs px-3.5 py-2 rounded-lg transition-all text-center md:text-left select-none shrink-0 ${
+                              isSelected
+                                ? 'bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline-strong)] text-[var(--colors-ink)] font-semibold shadow-2xs'
+                                : 'text-[var(--colors-muted)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-card)]'
+                            }`}
                           >
-                            {m.label}
-                          </text>
-                        ))}
-
-                        {/* Day of week labels on left (Mon, Wed, Fri) */}
-                        <text
-                          x={0}
-                          y={MONTH_LABEL_HEIGHT + 1 * CELL_STEP + 8}
-                          className="font-mono text-[9px] fill-[var(--colors-muted)]"
-                        >
-                          Mon
-                        </text>
-                        <text
-                          x={0}
-                          y={MONTH_LABEL_HEIGHT + 3 * CELL_STEP + 8}
-                          className="font-mono text-[9px] fill-[var(--colors-muted)]"
-                        >
-                          Wed
-                        </text>
-                        <text
-                          x={0}
-                          y={MONTH_LABEL_HEIGHT + 5 * CELL_STEP + 8}
-                          className="font-mono text-[9px] fill-[var(--colors-muted)]"
-                        >
-                          Fri
-                        </text>
-
-                        {/* Weeks columns & Day rects */}
-                        {weeks.map((week, wIdx) => (
-                          <g
-                            key={wIdx}
-                            transform={`translate(${DAY_LABEL_WIDTH + wIdx * CELL_STEP}, ${MONTH_LABEL_HEIGHT})`}
-                          >
-                            {week.map((cell) => {
-                              let fillColor = 'var(--heatmap-l0)';
-                              let strokeColor: string | undefined =
-                                'var(--heatmap-l0-border)';
-
-                              if (cell.intensity === 1) {
-                                fillColor = 'var(--heatmap-l1)';
-                                strokeColor = undefined;
-                              } else if (cell.intensity === 2) {
-                                fillColor = 'var(--heatmap-l2)';
-                                strokeColor = undefined;
-                              } else if (cell.intensity === 3) {
-                                fillColor = 'var(--heatmap-l3)';
-                                strokeColor = undefined;
-                              } else if (cell.intensity === 4) {
-                                fillColor = 'var(--heatmap-l4)';
-                                strokeColor = undefined;
-                              }
-
-                              const yPos = cell.row * CELL_STEP;
-
-                              return (
-                                <rect
-                                  key={cell.dateStr}
-                                  x={0}
-                                  y={yPos}
-                                  width={CELL_SIZE}
-                                  height={CELL_SIZE}
-                                  rx={2}
-                                  ry={2}
-                                  fill={fillColor}
-                                  stroke={strokeColor}
-                                  strokeWidth={strokeColor ? 1 : 0}
-                                  opacity={cell.isFuture ? 0.25 : 1}
-                                  className={
-                                    cell.isFuture
-                                      ? 'cursor-default'
-                                      : 'cursor-pointer hover:stroke-[var(--colors-ink)] hover:stroke-[1.5px] transition-all'
-                                  }
-                                  onMouseEnter={(e) =>
-                                    handleCellMouseEnter(e, cell)
-                                  }
-                                  onMouseLeave={handleCellMouseLeave}
-                                >
-                                  <title>
-                                    {t.activity.commitsTooltip(
-                                      cell.count,
-                                      cell.dateStr
-                                    )}
-                                  </title>
-                                </rect>
-                              );
-                            })}
-                          </g>
-                        ))}
-                      </svg>
+                            {yr}
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
