@@ -275,8 +275,14 @@ export const ar: TranslationDictionary = {
     commitsTooltip: (count: number, date: string) => `${count} ${count === 1 ? 'التزام' : 'التزامات'} في ${date}`,
     fallbackTitle: 'سجل النشاط غير متاح مؤقتاً',
     fallbackDesc: 'تم بلوغ الحد الأقصى لطلبات GitHub API أو تعذر الاتصال. يمكنك الاطلاع على الالتزامات مباشرة على GitHub.',
-    showMore: (count: number) => `عرض المزيد (+${count} التزام)`,
+    showMore: (count: number) => `عرض المزيد (+${count})`,
     showLess: 'عرض أقل',
+    contributionsInYear: (count: number, year: number | string) =>
+      `${count} ${count === 1 ? 'مساهمة' : 'مساهمات'} في عام ${year}`,
+    contributionsInLastYear: (count: number) =>
+      `${count} ${count === 1 ? 'مساهمة' : 'مساهمات'} في العام الماضي`,
+    yearLabel: (year: string | number) => `السنة: ${year}`,
+    lastYear: 'العام الماضي',
   },
   footer: {
     builtBy: 'تطوير وفق معايير المصادر المفتوحة',

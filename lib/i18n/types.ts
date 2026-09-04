@@ -163,6 +163,10 @@ export interface TranslationDictionary {
     fallbackDesc: string;
     showMore: (count: number) => string;
     showLess: string;
+    contributionsInYear: (count: number, year: number | string) => string;
+    contributionsInLastYear: (count: number) => string;
+    yearLabel: (year: string | number) => string;
+    lastYear: string;
   };
   footer: {
     builtBy: string;

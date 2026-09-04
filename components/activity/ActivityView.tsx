@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ExternalLink,
@@ -10,6 +11,7 @@ import {
   AlertCircle,
   RefreshCw,
   ChevronDown,
+  Check,
 } from 'lucide-react';
 import { SiGithub } from 'react-icons/si';
 import { Navbar } from '@/components/ui/Navbar';
@@ -42,26 +44,36 @@ export interface GitHubCommitData {
 interface ActivityViewProps {
   commits: GitHubCommitData[];
   error?: string | null;
-  selectedYear?: number;
+  selectedYear?: number | null;
   availableYears?: number[];
 }
 
-const CELL_SIZE = 10;
-const CELL_GAP = 3;
-const CELL_STEP = CELL_SIZE + CELL_GAP; // 13px
-const DAY_LABEL_WIDTH = 28;
-const MONTH_LABEL_HEIGHT = 18;
-const SVG_HEIGHT = MONTH_LABEL_HEIGHT + 7 * CELL_STEP; // 109px
-const INITIAL_VISIBLE_COMMITS = 5;
+// Substantially sized cells that fill the card gracefully
+const CELL_SIZE = 14;
+const CELL_GAP = 3.5;
+const CELL_STEP = CELL_SIZE + CELL_GAP; // 17.5px
+const DAY_LABEL_WIDTH = 34;
+const MONTH_LABEL_HEIGHT = 22;
+const SVG_HEIGHT = MONTH_LABEL_HEIGHT + 7 * CELL_STEP; // 144.5px
+const PAGE_SIZE = 5;
 
 export function ActivityView({
   commits,
   error,
   selectedYear,
-  availableYears,
+  availableYears = [2026, 2025],
 }: ActivityViewProps) {
   const { t, locale } = useI18n();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const router = useRouter();
+
+  // Commit history pagination: show max 5 at a time
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Mobile dropdown state
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Heatmap tooltip state
   const [tooltip, setTooltip] = useState<{
     text: string;
     x: number;
@@ -71,9 +83,22 @@ export function ActivityView({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentYear = new Date().getFullYear();
-  const activeYear = selectedYear || currentYear;
-  const yearsList =
-    availableYears && availableYears.length > 0 ? availableYears : [activeYear];
+
+  // Reset pagination when year changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedYear]);
+
+  // Close mobile dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Group commits by YYYY-MM-DD
   const commitCountByDate: Record<string, number> = {};
@@ -91,8 +116,23 @@ export function ActivityView({
   let endDay: Date;
   let weeksCount: number;
 
-  if (activeYear === currentYear) {
-    // Current year: rolling 53 weeks ending on current week's Saturday
+  if (selectedYear) {
+    // Specific Year selected: full calendar Jan 1 to Dec 31
+    const jan1 = new Date(selectedYear, 0, 1);
+    startDay = new Date(jan1);
+    startDay.setDate(jan1.getDate() - jan1.getDay()); // Sunday of Jan 1 week
+    startDay.setHours(0, 0, 0, 0);
+
+    const dec31 = new Date(selectedYear, 11, 31);
+    endDay = new Date(dec31);
+    endDay.setDate(dec31.getDate() + (6 - dec31.getDay())); // Saturday of Dec 31 week
+    endDay.setHours(23, 59, 59, 999);
+
+    const diffMs = endDay.getTime() - startDay.getTime();
+    const totalDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+    weeksCount = Math.ceil(totalDays / 7);
+  } else {
+    // Default: Last full year rolling window (53 weeks ending on current Saturday)
     endDay = new Date(today);
     endDay.setDate(today.getDate() + (6 - today.getDay()));
     endDay.setHours(23, 59, 59, 999);
@@ -102,21 +142,6 @@ export function ActivityView({
     startDay = new Date(endDay);
     startDay.setDate(endDay.getDate() - totalDays + 1);
     startDay.setHours(0, 0, 0, 0);
-  } else {
-    // Past year: full calendar Jan 1 to Dec 31
-    const jan1 = new Date(activeYear, 0, 1);
-    startDay = new Date(jan1);
-    startDay.setDate(jan1.getDate() - jan1.getDay());
-    startDay.setHours(0, 0, 0, 0);
-
-    const dec31 = new Date(activeYear, 11, 31);
-    endDay = new Date(dec31);
-    endDay.setDate(dec31.getDate() + (6 - dec31.getDay()));
-    endDay.setHours(23, 59, 59, 999);
-
-    const diffMs = endDay.getTime() - startDay.getTime();
-    const totalDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
-    weeksCount = Math.ceil(totalDays / 7);
   }
 
   const svgWidth = DAY_LABEL_WIDTH + weeksCount * CELL_STEP;
@@ -158,7 +183,11 @@ export function ActivityView({
       const dd = String(cur.getDate()).padStart(2, '0');
       const key = `${yyyy}-${mm}-${dd}`;
       const count = commitCountByDate[key] || 0;
-      const isFuture = cur > today;
+
+      // In current year or rolling view, dates beyond today are future
+      const isFuture = selectedYear
+        ? selectedYear === currentYear && cur > today
+        : cur > today;
 
       let intensity = 0;
       if (!isFuture) {
@@ -217,14 +246,18 @@ export function ActivityView({
     setTooltip(null);
   };
 
-  const displayedCommits = isExpanded
-    ? commits
-    : commits.slice(0, INITIAL_VISIBLE_COMMITS);
-  const remainingCount = Math.max(0, commits.length - INITIAL_VISIBLE_COMMITS);
+  const displayedCommits = commits.slice(0, visibleCount);
+  const remainingCount = Math.max(0, commits.length - visibleCount);
+  const nextIncrement = Math.min(PAGE_SIZE, remainingCount);
+
+  // Section title matches GitHub: "X contributions in 2026" or "X contributions in the last year"
+  const contributionsHeading = selectedYear
+    ? t.activity.contributionsInYear(commits.length, selectedYear)
+    : t.activity.contributionsInLastYear(commits.length);
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-[var(--colors-canvas)] transition-colors overflow-x-clip">
-      {/* 1. Header Navbar (Unchanged single GitHub icon linking to /activity) */}
+      {/* 1. Header Navbar (Unchanged) */}
       <Navbar />
 
       {/* 2. Main Content */}
@@ -320,26 +353,89 @@ export function ActivityView({
           </section>
         ) : (
           <>
-            {/* Heatmap Section: Side-by-side on desktop, stacked on mobile */}
+            {/* Heatmap Section: GitHub Composition */}
             <section className="w-full border-t border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas)]">
               <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-4">
-                {/* Section Header */}
-                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                {/* Header Row: Title on Left + Mobile Year Dropdown on Right */}
+                <div className="flex items-center justify-between gap-3">
                   <h2 className="font-display text-xl sm:text-2xl font-bold text-[var(--colors-ink)] tracking-tight">
-                    {commits.length} {commits.length === 1 ? 'contribution' : 'contributions'} in {activeYear}
+                    {contributionsHeading}
                   </h2>
-                  <span className="font-mono text-xs text-[var(--colors-muted)]">
-                    {t.activity.heatmapTitle}
-                  </span>
+
+                  {/* Mobile Year Selector Dropdown with Arrow (Above graph, not below) */}
+                  <div className="relative md:hidden shrink-0" ref={dropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] font-mono text-xs text-[var(--colors-ink)] shadow-2xs cursor-pointer select-none transition-all"
+                      aria-haspopup="true"
+                      aria-expanded={dropdownOpen}
+                    >
+                      <span>
+                        {selectedYear
+                          ? t.activity.yearLabel(selectedYear)
+                          : t.activity.yearLabel(t.activity.lastYear)}
+                      </span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-[var(--colors-muted)] transition-transform duration-200 ${
+                          dropdownOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {dropdownOpen && (
+                      <div className="absolute right-0 top-full mt-1.5 z-40 w-36 rounded-xl bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] p-1.5 shadow-xl font-mono text-xs space-y-0.5 animate-fadeIn">
+                        {/* Option: Last Year (Default rolling) */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDropdownOpen(false);
+                            router.push('/activity');
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer text-left ${
+                            !selectedYear
+                              ? 'bg-[var(--colors-surface-elevated)] text-[var(--colors-ink)] font-semibold'
+                              : 'text-[var(--colors-muted)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-elevated)]/60'
+                          }`}
+                        >
+                          <span>{t.activity.lastYear}</span>
+                          {!selectedYear && <Check className="w-3.5 h-3.5 text-[var(--colors-ink)]" />}
+                        </button>
+
+                        {/* Specific Years */}
+                        {availableYears.map((yr) => {
+                          const isSelected = selectedYear === yr;
+                          return (
+                            <button
+                              key={yr}
+                              type="button"
+                              onClick={() => {
+                                setDropdownOpen(false);
+                                router.push(`/activity?year=${yr}`);
+                              }}
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer text-left ${
+                                isSelected
+                                  ? 'bg-[var(--colors-surface-elevated)] text-[var(--colors-ink)] font-semibold'
+                                  : 'text-[var(--colors-muted)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-elevated)]/60'
+                              }`}
+                            >
+                              <span>{yr}</span>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-[var(--colors-ink)]" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Main Split Layout: Left Heatmap Grid + Right Year Selector */}
+                {/* Main Split Layout: Left Heatmap Grid + Right Year Selector Column */}
                 <div className="flex flex-col md:flex-row gap-5 lg:gap-6 items-start">
-                  {/* Left (Main Area): Sized naturally, not stretched */}
+                  {/* Left (Main Area): Substantially sized SVG grid filling the card */}
                   <div className="flex-1 min-w-0 w-full">
                     <div
                       ref={containerRef}
-                      className="relative bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] rounded-xl p-4 sm:p-5 shadow-xs"
+                      className="relative bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] rounded-xl p-4 sm:p-6 shadow-xs"
                     >
                       {/* Floating tooltip on hover */}
                       {tooltip && (
@@ -369,8 +465,8 @@ export function ActivityView({
                               <text
                                 key={idx}
                                 x={m.x}
-                                y={11}
-                                className="font-mono text-[10px] fill-[var(--colors-muted)]"
+                                y={13}
+                                className="font-mono text-[10.5px] fill-[var(--colors-muted)] font-medium"
                               >
                                 {m.label}
                               </text>
@@ -379,22 +475,22 @@ export function ActivityView({
                             {/* Day of week labels on left (Mon, Wed, Fri) */}
                             <text
                               x={0}
-                              y={MONTH_LABEL_HEIGHT + 1 * CELL_STEP + 8}
-                              className="font-mono text-[9px] fill-[var(--colors-muted)]"
+                              y={MONTH_LABEL_HEIGHT + 1 * CELL_STEP + 11}
+                              className="font-mono text-[9.5px] fill-[var(--colors-muted)]"
                             >
                               Mon
                             </text>
                             <text
                               x={0}
-                              y={MONTH_LABEL_HEIGHT + 3 * CELL_STEP + 8}
-                              className="font-mono text-[9px] fill-[var(--colors-muted)]"
+                              y={MONTH_LABEL_HEIGHT + 3 * CELL_STEP + 11}
+                              className="font-mono text-[9.5px] fill-[var(--colors-muted)]"
                             >
                               Wed
                             </text>
                             <text
                               x={0}
-                              y={MONTH_LABEL_HEIGHT + 5 * CELL_STEP + 8}
-                              className="font-mono text-[9px] fill-[var(--colors-muted)]"
+                              y={MONTH_LABEL_HEIGHT + 5 * CELL_STEP + 11}
+                              className="font-mono text-[9.5px] fill-[var(--colors-muted)]"
                             >
                               Fri
                             </text>
@@ -433,12 +529,12 @@ export function ActivityView({
                                       y={yPos}
                                       width={CELL_SIZE}
                                       height={CELL_SIZE}
-                                      rx={2}
-                                      ry={2}
+                                      rx={2.5}
+                                      ry={2.5}
                                       fill={fillColor}
                                       stroke={strokeColor}
                                       strokeWidth={strokeColor ? 1 : 0}
-                                      opacity={cell.isFuture ? 0.25 : 1}
+                                      opacity={cell.isFuture ? 0.35 : 1}
                                       className={
                                         cell.isFuture
                                           ? 'cursor-default'
@@ -465,11 +561,11 @@ export function ActivityView({
                       </div>
 
                       {/* Card Footer: Subtitle Note & Intensity Legend */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-2 text-xs font-mono text-[var(--colors-muted)] select-none border-t border-dashed border-[var(--colors-hairline)]">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 text-xs font-mono text-[var(--colors-muted)] select-none border-t border-dashed border-[var(--colors-hairline)]">
                         <span className="text-[11px] opacity-75">
-                          {activeYear === currentYear
-                            ? 'Recent rolling 52-week activity'
-                            : `Full calendar year ${activeYear}`}
+                          {selectedYear
+                            ? `Full calendar year ${selectedYear}`
+                            : 'Recent rolling 52-week activity'}
                         </span>
 
                         {/* Intensity Swatches */}
@@ -477,7 +573,7 @@ export function ActivityView({
                           <span>{t.activity.legendLess}</span>
                           <div className="flex items-center gap-1">
                             <div
-                              className="w-3 h-3 rounded-[2px]"
+                              className="w-3.5 h-3.5 rounded-[2px]"
                               style={{
                                 backgroundColor: 'var(--heatmap-l0)',
                                 border: '1px solid var(--heatmap-l0-border)',
@@ -485,22 +581,22 @@ export function ActivityView({
                               title="0 commits"
                             />
                             <div
-                              className="w-3 h-3 rounded-[2px]"
+                              className="w-3.5 h-3.5 rounded-[2px]"
                               style={{ backgroundColor: 'var(--heatmap-l1)' }}
                               title="1 commit"
                             />
                             <div
-                              className="w-3 h-3 rounded-[2px]"
+                              className="w-3.5 h-3.5 rounded-[2px]"
                               style={{ backgroundColor: 'var(--heatmap-l2)' }}
                               title="2 commits"
                             />
                             <div
-                              className="w-3 h-3 rounded-[2px]"
+                              className="w-3.5 h-3.5 rounded-[2px]"
                               style={{ backgroundColor: 'var(--heatmap-l3)' }}
                               title="3-4 commits"
                             />
                             <div
-                              className="w-3 h-3 rounded-[2px]"
+                              className="w-3.5 h-3.5 rounded-[2px]"
                               style={{ backgroundColor: 'var(--heatmap-l4)' }}
                               title="5+ commits"
                             />
@@ -511,32 +607,30 @@ export function ActivityView({
                     </div>
                   </div>
 
-                  {/* Right Column (Desktop) / Bottom Row (Mobile): Year Selector */}
-                  <div className="w-full md:w-28 lg:w-32 shrink-0">
-                    <div className="flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-visible pb-1 md:pb-0">
-                      {yearsList.map((yr) => {
-                        const isSelected = yr === activeYear;
-                        return (
-                          <Link
-                            key={yr}
-                            href={`/activity?year=${yr}`}
-                            className={`font-mono text-xs px-3.5 py-2 rounded-lg transition-all text-center md:text-left select-none shrink-0 ${
-                              isSelected
-                                ? 'bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline-strong)] text-[var(--colors-ink)] font-semibold shadow-2xs'
-                                : 'text-[var(--colors-muted)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-card)]'
-                            }`}
-                          >
-                            {yr}
-                          </Link>
-                        );
-                      })}
-                    </div>
+                  {/* Right Column (Desktop Only): Year Selector Stack (Matching GitHub Profile) */}
+                  <div className="hidden md:flex md:flex-col gap-1.5 w-28 lg:w-32 shrink-0">
+                    {availableYears.map((yr) => {
+                      const isSelected = selectedYear === yr;
+                      return (
+                        <Link
+                          key={yr}
+                          href={isSelected ? '/activity' : `/activity?year=${yr}`}
+                          className={`font-mono text-xs px-3.5 py-2 rounded-lg transition-all text-left select-none shrink-0 ${
+                            isSelected
+                              ? 'bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline-strong)] text-[var(--colors-ink)] font-semibold shadow-2xs'
+                              : 'text-[var(--colors-muted)] hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-card)]'
+                          }`}
+                        >
+                          {yr}
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* Commit History Ledger Section with "Show more" pagination */}
+            {/* Commit History Ledger Section with max 5 per page increment */}
             <section className="w-full border-t border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas)]">
               <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6">
                 <div>
@@ -612,25 +706,28 @@ export function ActivityView({
                     })}
                   </div>
 
-                  {/* Show more / Show less Toggle Bar */}
-                  {commits.length > INITIAL_VISIBLE_COMMITS && (
+                  {/* Show more (+5) / Show less Toggle Bar */}
+                  {commits.length > PAGE_SIZE && (
                     <div className="p-3 bg-[var(--colors-surface-card)] text-center border-t border-dashed border-[var(--colors-hairline)]">
-                      <button
-                        type="button"
-                        onClick={() => setIsExpanded((prev) => !prev)}
-                        className="font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] px-4 py-2 rounded-lg hover:bg-[var(--colors-surface-elevated)] transition-colors inline-flex items-center gap-2 cursor-pointer border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] select-none"
-                      >
-                        <span>
-                          {isExpanded
-                            ? t.activity.showLess
-                            : t.activity.showMore(remainingCount)}
-                        </span>
-                        <ChevronDown
-                          className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                            isExpanded ? 'rotate-180' : ''
-                          }`}
-                        />
-                      </button>
+                      {remainingCount > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                          className="font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] px-4 py-2 rounded-lg hover:bg-[var(--colors-surface-elevated)] transition-colors inline-flex items-center gap-2 cursor-pointer border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] select-none"
+                        >
+                          <span>{t.activity.showMore(nextIncrement)}</span>
+                          <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setVisibleCount(PAGE_SIZE)}
+                          className="font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] px-4 py-2 rounded-lg hover:bg-[var(--colors-surface-elevated)] transition-colors inline-flex items-center gap-2 cursor-pointer border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] select-none"
+                        >
+                          <span>{t.activity.showLess}</span>
+                          <ChevronDown className="w-3.5 h-3.5 rotate-180 transition-transform duration-200" />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

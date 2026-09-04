@@ -249,8 +249,14 @@ export const en: TranslationDictionary = {
     commitsTooltip: (count: number, date: string) => `${count} ${count === 1 ? 'commit' : 'commits'} on ${date}`,
     fallbackTitle: 'Activity Ledger Temporarily Unavailable',
     fallbackDesc: 'GitHub API rate limit reached or network connection dropped. You can still inspect commits directly on GitHub.',
-    showMore: (count: number) => `Show more (+${count} commits)`,
+    showMore: (count: number) => `Show more (+${count})`,
     showLess: 'Show less',
+    contributionsInYear: (count: number, year: number | string) =>
+      `${count} ${count === 1 ? 'contribution' : 'contributions'} in ${year}`,
+    contributionsInLastYear: (count: number) =>
+      `${count} ${count === 1 ? 'contribution' : 'contributions'} in the last year`,
+    yearLabel: (year: string | number) => `Year: ${year}`,
+    lastYear: 'Last year',
   },
   footer: {
     builtBy: 'Architected for lossless media extraction.',
