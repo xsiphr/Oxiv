@@ -11,7 +11,7 @@ export interface NavbarProps {
   status?: ExtractionStatus;
 }
 
-export function Navbar({ status = 'idle' }: NavbarProps) {
+export function Navbar({ status: _status = 'idle' }: NavbarProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -23,7 +23,7 @@ export function Navbar({ status = 'idle' }: NavbarProps) {
     }
     return 'dark';
   });
-  const { locale, toggleLocale, t } = useI18n();
+  const { toggleLocale, t } = useI18n();
 
   useEffect(() => {
     try {

@@ -24,23 +24,6 @@ const I18nContext = createContext<I18nContextType>({
   toggleLocale: () => {},
 });
 
-function getInitialLocale(): Locale {
-  if (typeof window !== 'undefined') {
-    try {
-      const saved = localStorage.getItem('oxiv_lang') as Locale | null;
-      if (saved === 'ar' || saved === 'en') {
-        return saved;
-      }
-      if (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en') {
-        return document.documentElement.lang as Locale;
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return 'en';
-}
-
 export function I18nProvider({
   children,
   initialLocale = 'en',

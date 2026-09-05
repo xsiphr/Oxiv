@@ -18,15 +18,10 @@ import {
   X,
 } from 'lucide-react';
 import { SiTiktok, SiInstagram, SiFacebook, SiPinterest, SiX } from 'react-icons/si';
-
-import { formatBytes } from '@/lib/extractors/utils';
 import { useI18n } from '@/lib/i18n';
 import { downloadZipBundle, ZipBundleItem } from '@/lib/zip';
 import { CardDownloadState } from '@/types';
 import { Oxi } from '@/components/ui/Oxi';
-
-// Named constant preserved for future multi-device browser testing
-// const MAX_INDIVIDUAL_DOWNLOADS = 5;
 
 interface MediaPreviewProps {
   media: MediaResult;
@@ -301,22 +296,6 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
       });
       setIsPhotoModalOpen(false);
     }, 1200);
-
-    /* Preserved for future testing if multi-download threshold is re-enabled:
-    if (selectedList.length > MAX_INDIVIDUAL_DOWNLOADS) {
-      const filename = `oxiv-${media.platform}-${cleanId}-selected-${selectedList.length}-photos.zip`;
-      await executeZipDownload(
-        selectedList.map(({ item, originalIndex }) => ({
-          url: item.url,
-          filename: `slide-${String(originalIndex).padStart(2, '0')}`,
-          extension: item.extension.toLowerCase(),
-        })),
-        filename,
-        'modal-selected'
-      );
-      setTimeout(() => setIsPhotoModalOpen(false), 1200);
-    }
-    */
   };
 
   // Full Album ZIP download handler (photos only)

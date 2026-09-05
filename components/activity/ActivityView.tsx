@@ -309,7 +309,6 @@ export function ActivityView({
 
   const displayedCommits = commits.slice(0, visibleCount);
   const remainingCount = Math.max(0, commits.length - visibleCount);
-  const nextIncrement = Math.min(PAGE_SIZE, remainingCount);
 
   // Section title matches GitHub: "X contributions in 2026" or "X contributions in the last year"
   const contributionsHeading = selectedYear

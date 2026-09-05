@@ -57,7 +57,7 @@ export default function ActivityLoading() {
                     {/* Mock Month Labels */}
                     <div className="flex items-center justify-between px-8">
                       {['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'].map(
-                        (m, i) => (
+                        (_, i) => (
                           <div key={i} className="w-6 h-3 rounded bg-[var(--colors-surface-elevated)] opacity-40" />
                         )
                       )}
