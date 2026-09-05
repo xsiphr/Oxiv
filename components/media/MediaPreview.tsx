@@ -23,6 +23,7 @@ import { formatBytes } from '@/lib/extractors/utils';
 import { useI18n } from '@/lib/i18n';
 import { downloadZipBundle, ZipBundleItem } from '@/lib/zip';
 import { CardDownloadState } from '@/types';
+import { Oxi } from '@/components/ui/Oxi';
 
 // Named constant preserved for future multi-device browser testing
 // const MAX_INDIVIDUAL_DOWNLOADS = 5;
@@ -544,11 +545,16 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
       {/* Top Header Bar inside Preview */}
       <div className="w-full border-b border-dashed border-[var(--colors-hairline)]">
         <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex flex-wrap items-center justify-between gap-4">
-          {/* Left: Platform Pill & Timestamp */}
+          {/* Left: Platform Pill, Oxi Ready Badge & Timestamp */}
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 font-mono text-xs capitalize px-2.5 py-1 rounded-full bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] text-[var(--colors-ink)] font-semibold">
               {getPlatformIcon()}
               <span>{media.platform}</span>
+            </span>
+
+            <span className="inline-flex items-center gap-1.5 font-mono text-xs px-2.5 py-1 rounded-full bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] text-[var(--colors-ink)]">
+              <Oxi status="success" size={13} className="shrink-0" />
+              <span className="text-[11px] font-medium tracking-tight text-[var(--colors-body)]">Ready</span>
             </span>
 
             <span className="font-mono text-xs text-[var(--colors-muted)]">

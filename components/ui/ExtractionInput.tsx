@@ -4,22 +4,26 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Clipboard, X, CornerDownLeft } from 'lucide-react';
 import { PlatformBadges } from './PlatformBadges';
 import { detectPlatform } from '@/lib/platformRegistry';
-import { Platform } from '@/types';
+import { Platform, ExtractionStatus } from '@/types';
 import { useI18n } from '@/lib/i18n';
+import { Oxi } from './Oxi';
 
 interface ExtractionInputProps {
   onExtract: (url: string) => void;
   isLoading: boolean;
+  status?: ExtractionStatus;
   externalError?: string | null;
   resetSignal?: number;
   externalUrl?: string;
 }
 
-export function ExtractionInput({ onExtract, isLoading, externalError, resetSignal, externalUrl }: ExtractionInputProps) {
+export function ExtractionInput({ onExtract, isLoading, status, externalError, resetSignal, externalUrl }: ExtractionInputProps) {
   const { t } = useI18n();
   const [url, setUrl] = useState('');
   const [detectedPlatform, setDetectedPlatform] = useState<Platform>('unknown');
   const [error, setError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [nodSignal, setNodSignal] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync externalUrl if provided (e.g. from Recents selection)
@@ -108,6 +112,7 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
   const handleNativePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const pastedText = e.clipboardData.getData('text');
     if (!pastedText) return;
+    setNodSignal((prev) => prev + 1);
     processAndExtract(pastedText);
   };
 
@@ -116,6 +121,7 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
     try {
       const text = await navigator.clipboard.readText();
       if (text) {
+        setNodSignal((prev) => prev + 1);
         processAndExtract(text);
       }
     } catch (err) {
@@ -146,9 +152,15 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Brand Name */}
-      <div className="font-display text-5xl sm:text-6xl md:text-7xl rtl:text-5xl rtl:sm:text-6xl rtl:md:text-7xl rtl:lg:text-[5.25rem] font-bold tracking-tight text-[var(--colors-ink)] text-center mb-3 sm:mb-4 select-none leading-[1.08] rtl:leading-[1.22]">
-        {t.hero.brand}
+      {/* Brand Mascot Standalone in Hero */}
+      <div className="flex items-center justify-center mb-6 sm:mb-8 select-none">
+        <Oxi
+          status={status || (isLoading ? 'extracting' : 'idle')}
+          size={98}
+          isFocused={isFocused}
+          nodSignal={nodSignal}
+          className="shrink-0"
+        />
       </div>
 
       {/* Editorial Headline */}
@@ -167,6 +179,8 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
               value={url}
               onChange={handleInputChange}
               onPaste={handleNativePaste}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               placeholder={t.hero.placeholder}
               readOnly={isLoading}
               className="font-mono text-xs sm:text-sm bg-transparent outline-none flex-1 min-w-0 text-[var(--colors-ink)] placeholder:text-[var(--colors-muted)] px-2.5 sm:px-3 disabled:opacity-50 read-only:opacity-60"

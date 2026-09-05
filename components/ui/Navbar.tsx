@@ -5,8 +5,13 @@ import Link from 'next/link';
 import { Sun, Moon } from 'lucide-react';
 import { SiGithub } from 'react-icons/si';
 import { useI18n } from '@/lib/i18n';
+import { ExtractionStatus } from '@/types';
 
-export function Navbar() {
+export interface NavbarProps {
+  status?: ExtractionStatus;
+}
+
+export function Navbar({ status = 'idle' }: NavbarProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -49,14 +54,19 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full glass-header border-b border-dashed border-[var(--colors-hairline)] transition-colors duration-300">
       <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between">
-        {/* Brand Monolith Logo */}
-        <a href="/" className="flex items-center select-none group" aria-label="Oxiv">
+        {/* Brand Logo & Wordmark */}
+        <Link href="/" className="flex items-center gap-2.5 select-none group" aria-label="Oxiv">
           <img
-            src="/logos/logo-monolith.svg"
-            alt="Oxiv Logo"
-            className="w-auto h-8 sm:h-9 object-contain transition-transform group-hover:scale-105"
+            src="/logos/oxi.svg"
+            alt="Oxi Logo"
+            className={`w-auto h-7 sm:h-8 object-contain transition-transform group-hover:scale-105 ${
+              theme === 'light' ? 'invert' : ''
+            }`}
           />
-        </a>
+          <span className="font-display font-bold text-xl sm:text-2xl tracking-tight text-[var(--colors-ink)] transition-opacity group-hover:opacity-85">
+            Oxiv
+          </span>
+        </Link>
 
         {/* Minimal Actions (GitHub, Theme Toggle, Language Switcher) */}
         <div className="flex items-center gap-2 sm:gap-3 text-[var(--colors-muted)]">

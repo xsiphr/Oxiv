@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TriangleAlert, ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { ExtractionError } from '@/types';
 import { useI18n } from '@/lib/i18n';
+import { Oxi } from './Oxi';
 
 interface DiagnosticCardProps {
   error: ExtractionError;
@@ -86,15 +87,14 @@ export function DiagnosticCard({ error, onReset, onRetry }: DiagnosticCardProps)
   return (
     <div className="w-full max-w-xl mx-auto rounded-xl bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] p-6 sm:p-7 shadow-xs transition-all duration-300">
       <div className="flex flex-col sm:flex-row items-start gap-4">
-        {/* Single purposeful colored warning indicator */}
-        <div
-          className={`p-2.5 rounded-lg shrink-0 ${
-            isAmber
-              ? 'bg-amber-500/10 border border-amber-500/20 text-amber-500'
-              : 'bg-rose-500/10 border border-rose-500/20 text-rose-500'
-          }`}
-        >
-          <TriangleAlert className="w-5 h-5" />
+        {/* Oxi Persona in Diagnostic Error State */}
+        <div className="relative shrink-0 flex items-center justify-center p-2 rounded-xl bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] shadow-xs">
+          <Oxi status="error" size={38} className="shrink-0" />
+          <span
+            className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[var(--colors-surface-card)] ${
+              isAmber ? 'bg-amber-500' : 'bg-rose-500'
+            }`}
+          />
         </div>
 
         <div className="space-y-1.5 flex-1 min-w-0">

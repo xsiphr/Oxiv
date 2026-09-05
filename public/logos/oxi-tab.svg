@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="oxi-tab-clip">
+      <path d="M 26 94 L 26 22 L 74 36 L 74 94 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- App Icon Background Rounded Square -->
+  <rect width="512" height="512" rx="128" fill="#141414" />
+  <rect x="1" y="1" width="510" height="510" rx="127" stroke="#333333" stroke-width="2" />
+
+  <!-- Centered Unified Oxi Portal -->
+  <g transform="translate(100, 100) scale(3.12)">
+    <path d="M 12 92 L 12 10 L 88 10 L 88 92 L 74 92 L 74 36 L 26 22 L 26 92 Z" fill="#EDEDED" />
+    <g clipPath="url(#oxi-tab-clip)">
+      <rect x="47" y="50" width="7.5" height="5" rx="0.5" fill="#EDEDED" />
+      <rect x="58.5" y="50" width="7.5" height="5" rx="0.5" fill="#EDEDED" />
+    </g>
+  </g>
+</svg>
