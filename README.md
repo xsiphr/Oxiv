@@ -14,7 +14,7 @@ Paste a link, get the original file. No sign-up, no ads, no server-side storage.
 | :--- | :--- |
 | TikTok | ✅ Live |
 | Pinterest | ✅ Live |
-| Facebook | 🔜 Next |
+| Facebook | ✅ Live |
 | Instagram | 🕓 Planned |
 | X | 🕓 Planned |
 | YouTube | 🕓 Planned |
@@ -49,7 +49,7 @@ Open [http://localhost:3000](http://localhost:3000/).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+GNU AGPLv3 — see [LICENSE](LICENSE).
 
 ---
 

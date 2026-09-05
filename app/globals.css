@@ -41,7 +41,7 @@ html[dir="rtl"] .font-body {
   --btn-primary-fg: #141414;
   --btn-primary-hover: #ffffff;
 
-  /* Heatmap Shades (Monochrome Blueprint intensity ramp) */
+  /* Heatmap Shades (Monochrome Gridlines intensity ramp) */
   --heatmap-l0: #1b1b1e;
   --heatmap-l0-border: #2c2c31;
   --heatmap-l1: #40434b;
@@ -139,8 +139,8 @@ body {
   background-color: rgba(248, 248, 251, 0.85);
 }
 
-/* Custom blueprint utilities */
-.blueprint-grid-bg {
+/* Custom gridline utilities */
+.monochrome-grid-bg {
   background-size: 24px 24px;
   background-image: 
     linear-gradient(to right, var(--colors-hairline) 1px, transparent 1px),

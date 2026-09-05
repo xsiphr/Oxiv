@@ -39,6 +39,8 @@ yarn-error.log*
 # --- AI assistant / personal notes (never publish these) ---
 AGENTS.md
 CLAUDE.md
+PROJECT_HISTORY.md
+HISTORY.md
 .agents/
 .agent/
 .claude/

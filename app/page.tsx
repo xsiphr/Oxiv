@@ -95,7 +95,7 @@ export default function Home() {
     }
   }, [status]);
 
-  // Force scroll to top and ensure fonts are ready with smooth progressive blueprint drawing
+  // Force scroll to top and ensure fonts are ready with smooth progressive layout drawing
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if ('scrollRestoration' in window.history) {

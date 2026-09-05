@@ -31,7 +31,7 @@ export function MetricsGrid() {
   return (
     <section className="w-full border-y border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas)] transition-colors">
       <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)]">
-        {/* 3-Column Grid with Blueprint Hover Effects */}
+        {/* 3-Column Grid with Gridline Hover Effects */}
         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 divide-dashed divide-[var(--colors-hairline)]">
           {metrics.map((metric, idx) => (
             <div
@@ -40,7 +40,7 @@ export function MetricsGrid() {
                 idx > 0 ? 'md:border-s md:border-dashed md:border-[var(--colors-hairline)]' : ''
               }`}
             >
-              {/* Floating Icon with Blueprint Hover Transition */}
+              {/* Floating Icon with Gridline Hover Transition */}
               <div className="text-[var(--colors-muted)] group-hover:text-[var(--colors-ink)] group-hover:-translate-y-0.5 transition-all duration-300 mb-3.5">
                 {metric.icon}
               </div>
