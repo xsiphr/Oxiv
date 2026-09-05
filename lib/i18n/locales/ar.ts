@@ -289,6 +289,7 @@ export const ar: TranslationDictionary = {
     license: 'مرخص تحت رخصة MIT',
     architecture: 'نواة معالجة الوسائط المفتوحة',
     github: 'المستودع',
+    support: 'ادعم المشروع',
   },
   ticker: ['بدون علامات مائية · بدون حفظ للبيانات · بدون قيود ·'],
 };

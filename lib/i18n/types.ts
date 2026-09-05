@@ -173,6 +173,7 @@ export interface TranslationDictionary {
     license: string;
     architecture: string;
     github: string;
+    support: string;
   };
   ticker: string[];
 }

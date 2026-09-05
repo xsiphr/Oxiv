@@ -263,6 +263,7 @@ export const en: TranslationDictionary = {
     license: 'MIT Licensed',
     architecture: 'Stateless Edge Architecture',
     github: 'GitHub',
+    support: 'Support',
   },
   ticker: [
     'NO WATERMARKS · NO RETENTION · NO LIMITS · 100% LOSSLESS · DIRECT CDN STREAM ·',
