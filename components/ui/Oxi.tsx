@@ -16,6 +16,8 @@ export interface OxiProps {
   roofTilt?: 'left' | 'right' | 'flat' | 'auto';
   /** Whether the input field is currently focused (Oxi glances down attentively) */
   isFocused?: boolean;
+  /** Whether an action button (Paste/Extract) is hovered (eyes widen in eager anticipation) */
+  isAnticipating?: boolean;
   /** Counter or signal trigger to execute an attentive perk-up nod */
   nodSignal?: number;
   /** Additional CSS class names */
@@ -137,6 +139,7 @@ export function Oxi({
   interactive = true,
   roofTilt = 'auto',
   isFocused = false,
+  isAnticipating = false,
   nodSignal = 0,
   className = '',
   ariaLabel = 'Oxi - Oxiv Mascot',
@@ -412,7 +415,7 @@ export function Oxi({
 
   // 8. Biological Multi-Cadence Blinking (Double-blinks, single-blinks, soft-blinks)
   useEffect(() => {
-    if (status !== 'idle' || isSleeping || shakePhase >= 0) return;
+    if (status !== 'idle' || isSleeping || shakePhase >= 0 || isAnticipating) return;
 
     let isCancelled = false;
     let timerId: NodeJS.Timeout;
@@ -583,8 +586,8 @@ export function Oxi({
     }
 
     // When cursor is pointing downwards, the roof brow dips down noticeably into the frame
-    // up to +18px when cursor is at the bottom of the viewport
-    const dip = status === 'idle' && !isSleeping ? Math.max(0, currentNy) * 18 : 0;
+    // up to +18px when cursor is at the bottom of the viewport (inhibited when anticipating so wide eyes shine)
+    const dip = status === 'idle' && !isSleeping && !isAnticipating ? Math.max(0, currentNy) * 18 : 0;
 
     if (dynamicTilt === 'left') {
       return { left: 36 + dip * 1.15, right: 22 + dip * 0.75 };
@@ -594,7 +597,7 @@ export function Oxi({
     }
     // tilt-right (signature slant)
     return { left: 22 + dip * 0.75, right: 36 + dip * 1.15 };
-  }, [shakePhase, dynamicTilt, currentNy, status, isSleeping]);
+  }, [shakePhase, dynamicTilt, currentNy, status, isSleeping, isAnticipating]);
 
   // Unified Portal Frame Path
   const framePath = `M 12 92 L 12 10 L 88 10 L 88 92 L 74 92 L 74 ${ceilingY.right} L 26 ${ceilingY.left} L 26 92 Z`;
@@ -603,7 +606,12 @@ export function Oxi({
   const openingClipPath = `M 26 94 L 26 ${ceilingY.left} L 74 ${ceilingY.right} L 74 94 Z`;
 
   // Combined Raw Gaze Offsets
-  const focusOffsetY = isFocused && status === 'idle' && !isSleeping && shakePhase < 0 ? 6.0 : 0;
+  const focusOffsetY =
+    isAnticipating && status === 'idle' && !isSleeping && shakePhase < 0
+      ? 8.0
+      : isFocused && status === 'idle' && !isSleeping && shakePhase < 0
+      ? 6.0
+      : 0;
   const nodOffsetY = isNodding ? 3.5 : 0;
 
   // Shake gaze displacement
@@ -747,6 +755,20 @@ export function Oxi({
       };
     }
 
+    // Anticipation Mode (User hovers Paste or Extract button: eager wide eyes looking forward to action!)
+    if (isAnticipating && status === 'idle' && shakePhase < 0 && !isSleeping) {
+      return {
+        width: 9.6,
+        height: 9.2,
+        gap: 4.2,
+        baseX: baseX + 1.5,
+        baseY: baseY - 1.5,
+        radius: 2.2,
+        leftHeight: 9.2,
+        rightHeight: 9.2
+      };
+    }
+
     // Dynamic Idle Tracking: Animate eye size & shape based on gaze direction!
     let dynamicW = 7.8;
     let dynamicLeftH = 5.2;
@@ -800,6 +822,7 @@ export function Oxi({
     scanOffset,
     isSleeping,
     isFocused,
+    isAnticipating,
     activeAutonomous,
     autoMoodIndex,
     effectiveGazeX,

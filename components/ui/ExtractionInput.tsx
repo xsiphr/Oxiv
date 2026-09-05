@@ -23,6 +23,7 @@ export function ExtractionInput({ onExtract, isLoading, status, externalError, r
   const [detectedPlatform, setDetectedPlatform] = useState<Platform>('unknown');
   const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [isAnticipating, setIsAnticipating] = useState(false);
   const [nodSignal, setNodSignal] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -158,6 +159,7 @@ export function ExtractionInput({ onExtract, isLoading, status, externalError, r
           status={status || (isLoading ? 'extracting' : 'idle')}
           size={98}
           isFocused={isFocused}
+          isAnticipating={isAnticipating}
           nodSignal={nodSignal}
           className="shrink-0"
         />
@@ -191,6 +193,8 @@ export function ExtractionInput({ onExtract, isLoading, status, externalError, r
               <button
                 type="button"
                 onClick={handleClear}
+                onMouseEnter={() => setIsAnticipating(true)}
+                onMouseLeave={() => setIsAnticipating(false)}
                 disabled={isLoading}
                 aria-label="Clear input"
                 className="p-2 text-[var(--colors-muted)] hover:text-[var(--colors-ink)] rounded-lg hover:bg-[var(--colors-surface-elevated)] transition-colors cursor-pointer shrink-0"
@@ -201,6 +205,8 @@ export function ExtractionInput({ onExtract, isLoading, status, externalError, r
               <button
                 type="button"
                 onClick={handlePaste}
+                onMouseEnter={() => setIsAnticipating(true)}
+                onMouseLeave={() => setIsAnticipating(false)}
                 aria-label="Paste link from clipboard"
                 className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-body font-semibold text-[var(--colors-ink)] p-2 sm:px-3.5 sm:py-2 rounded-lg bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] hover:bg-[var(--colors-surface-card)] transition-all cursor-pointer shadow-xs shrink-0 active:scale-95"
               >
@@ -213,6 +219,8 @@ export function ExtractionInput({ onExtract, isLoading, status, externalError, r
             <button
               type="submit"
               disabled={isLoading || !url.trim()}
+              onMouseEnter={() => setIsAnticipating(true)}
+              onMouseLeave={() => setIsAnticipating(false)}
               aria-label="Extract media"
               className="bg-[var(--colors-ink)] text-[var(--colors-canvas)] hover:opacity-90 active:scale-95 p-2 sm:px-5 sm:py-2.5 rounded-lg font-body font-semibold text-xs sm:text-sm transition-all shadow-xs disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-1.5 sm:gap-2 shrink-0 cursor-pointer"
             >
