@@ -292,6 +292,12 @@ export function ActivityView({
         {/* Hero Header */}
         <section className="w-full">
           <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-3 sm:space-y-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <span className="font-mono text-[11px] font-semibold tracking-widest text-[var(--colors-muted)] uppercase bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] px-2.5 py-1 rounded-md">
+                xsiphr/Oxiv
+              </span>
+            </div>
+
             <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--colors-ink)] tracking-tight">
               {t.activity.title}
             </h1>
