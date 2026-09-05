@@ -30,8 +30,9 @@ export type RoofTiltDirection = 'left' | 'right' | 'flat';
 
 export type MobileMood =
   | 'center'
-  | 'look-right'
-  | 'look-left'
+  | 'look-right-corner'
+  | 'look-down'
+  | 'look-left-corner'
   | 'ponder'
   | 'squint-scan'
   | 'alert';
@@ -41,44 +42,70 @@ interface AutoMoodConfig {
   duration: number;
   tilt: RoofTiltDirection;
   gaze: { x: number; y: number };
-  eyeScale?: { leftH?: number; rightH?: number; w?: number };
+  nx: number;
+  ny: number;
+  eyeScale?: { leftH?: number; rightH?: number; w?: number; radius?: number };
 }
 
 /**
- * Sequence of autonomous moods for mobile (touchscreens) and stationary idle states.
- * Cycles dynamically through diverse roof tilts, inquisitive looks, ponderings, and expressions.
+ * Autonomous exploratory mood routine for mobile touchscreens and stationary cursor states.
+ * Cycles dynamically through diverse roof tilts, corner hugs, deep downward glances, and varying eye sizes.
  */
 const AUTO_MOODS: AutoMoodConfig[] = [
-  { mood: 'center', duration: 3200, tilt: 'flat', gaze: { x: 0, y: 0 } },
-  { mood: 'look-right', duration: 3600, tilt: 'right', gaze: { x: 4.2, y: 0.6 } },
-  { mood: 'center', duration: 2000, tilt: 'flat', gaze: { x: 0, y: 0 } },
+  { mood: 'center', duration: 3000, tilt: 'flat', gaze: { x: 0, y: 0 }, nx: 0, ny: 0 },
   {
-    mood: 'look-left',
-    duration: 3600,
+    mood: 'look-right-corner',
+    duration: 3500,
+    tilt: 'right',
+    gaze: { x: 12.5, y: 16.0 },
+    nx: 0.95,
+    ny: 0.6,
+    eyeScale: { leftH: 5.2, rightH: 7.2, w: 8.5, radius: 0.8 }
+  },
+  {
+    mood: 'look-down',
+    duration: 3000,
+    tilt: 'flat',
+    gaze: { x: 0, y: 24.0 },
+    nx: 0,
+    ny: 1.0,
+    eyeScale: { leftH: 4.2, rightH: 4.2, w: 9.2, radius: 0.5 }
+  },
+  {
+    mood: 'look-left-corner',
+    duration: 3500,
     tilt: 'left',
-    gaze: { x: -4.2, y: -0.6 },
-    eyeScale: { leftH: 5.6, rightH: 4.2 }
+    gaze: { x: -12.5, y: 16.0 },
+    nx: -0.95,
+    ny: 0.6,
+    eyeScale: { leftH: 7.2, rightH: 5.2, w: 8.5, radius: 0.8 }
   },
   {
     mood: 'ponder',
     duration: 3200,
     tilt: 'flat',
-    gaze: { x: 2.2, y: -2.8 },
-    eyeScale: { leftH: 4.2, rightH: 4.2 }
+    gaze: { x: 5.0, y: -6.5 },
+    nx: 0.4,
+    ny: -0.6,
+    eyeScale: { leftH: 6.5, rightH: 6.5, w: 7.5, radius: 1.0 }
   },
   {
     mood: 'squint-scan',
-    duration: 2800,
+    duration: 2600,
     tilt: 'right',
-    gaze: { x: -2.0, y: 1.0 },
-    eyeScale: { leftH: 3.2, rightH: 3.2, w: 8.5 }
+    gaze: { x: -6.0, y: 8.0 },
+    nx: -0.5,
+    ny: 0.4,
+    eyeScale: { leftH: 3.2, rightH: 3.2, w: 9.8, radius: 0.5 }
   },
   {
     mood: 'alert',
     duration: 2400,
     tilt: 'flat',
-    gaze: { x: 0, y: -1.0 },
-    eyeScale: { leftH: 6.2, rightH: 6.2 }
+    gaze: { x: 0, y: -2.0 },
+    nx: 0,
+    ny: -0.2,
+    eyeScale: { leftH: 8.2, rightH: 8.2, w: 8.8, radius: 1.4 }
   }
 ];
 
@@ -86,21 +113,23 @@ const AUTO_MOODS: AutoMoodConfig[] = [
  * Oxi — Oxiv's official interactive geometric mascot & brandmark.
  *
  * Kinematics & Expression Architecture:
- * 1. 3-Way Dynamic Roof Morphing:
+ * 1. Deep Vertical Range & Corner Hugging:
+ *    - Downward travel: plunges up to +26px deep into the lower portal zone
+ *    - Corner hugs: reaches ±12.5px hugging the interior pillars
+ *    - Parallelogram skew: slants (// and \\) to peek directly out of corners ("مراقبك")
+ * 2. Dynamic Brow/Roof Descending:
+ *    - As cursor points downwards, the roof brow dips down (up to +18px) to narrow the opening
+ * 3. 3-Way Dynamic Roof Morphing:
  *    - tilt-right (Left peak 22, Right peak 36) -> cursor right, look-right mood, extracting
  *    - tilt-left  (Left peak 36, Right peak 22) -> cursor left, look-left mood, error
- *    - flat       (Left peak 26, Right peak 26) -> cursor center, ponder/alert mood, sleeping, success
- * 2. Expressive Eye States & Multi-Cadence Blinking:
- *    - Biological Blinking: Randomized single-blinks, double-blinks, and soft contemplation blinks
- *    - Mobile Autonomous Exploration: Autonomous routine alternating roof tilts, scans, and poses
- *    - Mobile Scroll Tracking: Glances in the direction of user scroll swipes
- *    - Focus: Attentive downward glance (+3.0px) toward input field
- *    - Paste Nod: Quick 250ms acknowledgment dip on URL receipt
- *    - Sleeping: Half-lidded resting state after 25s mouse inactivity; wakes with double blink
- *    - Extracting: Sharp horizontal scan slits (--) with rhythmic telemetry sweep
- *    - Success: Tall alert celebration bars (||) with balanced flat ceiling
- *    - Error: Inquisitive slant with asymmetric confused squint
- *    - Click: Playful one-eye wink easter egg
+ *    - flat       (Left peak 26, Right peak 26) -> cursor center, look-down/ponder, sleeping, success
+ * 4. Interactive Click "Wake-up Head Shake" Easter Egg:
+ *    - On tap/click: rapidly shakes head/roof left-right-left-right, eyes dart in sync, finishes with alert double blink!
+ * 5. Multi-Cadence Biological Blinking:
+ *    - Realistic distribution: ~65% single blinks, ~28% rapid double blinks, ~7% soft languid blinks
+ * 6. Pointer Priority:
+ *    - Mouse/touch movements immediately and unconditionally drive the eyes
+ *    - Autonomous exploration only engages after 5.5s of complete stillness
  */
 export function Oxi({
   status = 'idle',
@@ -119,10 +148,14 @@ export function Oxi({
   const containerRef = useRef<HTMLDivElement>(null);
   const [gazeOffset, setGazeOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [normalizedX, setNormalizedX] = useState<number>(0);
+  const [normalizedY, setNormalizedY] = useState<number>(0);
   const [isBlinking, setIsBlinking] = useState(false);
-  const [isWinking, setIsWinking] = useState(false);
   const [microWander, setMicroWander] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [scanOffset, setScanOffset] = useState(0);
+
+  // Click / Tap "Wake-up Shake" State Machine (-1 = idle, 0..5 = active phases)
+  const [shakePhase, setShakePhase] = useState<number>(-1);
+  const shakeTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // Inactivity Sleep Mode (25s idle threshold)
   const [isSleeping, setIsSleeping] = useState(false);
@@ -139,6 +172,10 @@ export function Oxi({
   const [autoMoodIndex, setAutoMoodIndex] = useState(0);
   const [scrollGazeY, setScrollGazeY] = useState(0);
 
+  // Pointer Activity Timestamp (Ensures mouse movement ALWAYS overrides autonomous mode)
+  const lastMoveTimestampRef = useRef<number>(0);
+  const [isCurrentlyMovingPointer, setIsCurrentlyMovingPointer] = useState(false);
+
   // 1. Mobile & Touch Screen Detection
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -146,18 +183,15 @@ export function Oxi({
       const isCoarse = window.matchMedia('(pointer: coarse)').matches;
       const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       setIsTouchDevice(isCoarse || hasTouch);
-      if (isCoarse || hasTouch) {
-        setIsAutonomousActive(true);
-      }
     };
     checkTouch();
     window.addEventListener('resize', checkTouch);
     return () => window.removeEventListener('resize', checkTouch);
   }, []);
 
-  // 2. Autonomous Mood Cycle Sequencer (Runs on mobile or when cursor is idle)
+  // 2. Autonomous Mood Cycle Sequencer (Only runs when pointer is truly inactive and not shaking)
   useEffect(() => {
-    if (status !== 'idle' || isSleeping || (!isAutonomousActive && !isTouchDevice)) {
+    if (status !== 'idle' || isSleeping || isCurrentlyMovingPointer || shakePhase >= 0) {
       return;
     }
 
@@ -167,11 +201,11 @@ export function Oxi({
     }, currentMood.duration);
 
     return () => clearTimeout(timer);
-  }, [status, isSleeping, isAutonomousActive, isTouchDevice, autoMoodIndex]);
+  }, [status, isSleeping, isCurrentlyMovingPointer, shakePhase, autoMoodIndex]);
 
   // 3. Mobile Scroll Motion Reactive Tracker (Glance up/down on swipe)
   useEffect(() => {
-    if (!isTouchDevice || status !== 'idle' || isSleeping) return;
+    if (!isTouchDevice || status !== 'idle' || isSleeping || shakePhase >= 0) return;
 
     let lastScrollY = window.scrollY;
     let scrollTimeout: NodeJS.Timeout;
@@ -182,11 +216,11 @@ export function Oxi({
       lastScrollY = currentY;
 
       if (Math.abs(delta) > 3) {
-        setScrollGazeY(delta > 0 ? 2.6 : -2.2);
+        setScrollGazeY(delta > 0 ? 4.0 : -3.5);
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
           setScrollGazeY(0);
-        }, 380);
+        }, 400);
       }
     };
 
@@ -195,7 +229,7 @@ export function Oxi({
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, [isTouchDevice, status, isSleeping]);
+  }, [isTouchDevice, status, isSleeping, shakePhase]);
 
   // 4. Trigger perk-up nod reaction on nodSignal change
   useEffect(() => {
@@ -207,8 +241,25 @@ export function Oxi({
     return () => clearTimeout(nodTimer);
   }, [nodSignal]);
 
-  // 5. Dynamic Roof Tilt Calculation (3-Way Morph)
+  // Determine whether autonomous cycle should apply
+  const activeAutonomous =
+    shakePhase < 0 &&
+    !isCurrentlyMovingPointer &&
+    (isAutonomousActive || isTouchDevice) &&
+    status === 'idle' &&
+    !isSleeping &&
+    !isFocused;
+
+  const currentNx = activeAutonomous ? AUTO_MOODS[autoMoodIndex].nx : normalizedX;
+  const currentNy = activeAutonomous ? AUTO_MOODS[autoMoodIndex].ny : normalizedY;
+
+  // 5. Dynamic Roof Tilt Calculation (3-Way Morph + Shake Choreography)
   const dynamicTilt = React.useMemo<RoofTiltDirection>(() => {
+    // Interactive Click Shake takes instant priority
+    if (shakePhase === 0 || shakePhase === 2) return 'left';
+    if (shakePhase === 1 || shakePhase === 3) return 'right';
+    if (shakePhase >= 4) return 'flat';
+
     if (roofTilt !== 'auto') return roofTilt;
 
     // Platform lifecycle overrides when active
@@ -219,18 +270,27 @@ export function Oxi({
     // Sleep mode settles comfortably flat
     if (isSleeping) return 'flat';
 
-    // When autonomous mode is active (on mobile or when cursor is stationary > 4s)
-    if (isAutonomousActive || isTouchDevice) {
+    // When autonomous mode is active
+    if (activeAutonomous) {
       return AUTO_MOODS[autoMoodIndex].tilt;
     }
 
     // In desktop mouse tracking mode: dynamically steer according to normalized horizontal gaze
-    if (normalizedX > 0.22) return 'right';
-    if (normalizedX < -0.22) return 'left';
+    if (normalizedX > 0.18) return 'right';
+    if (normalizedX < -0.18) return 'left';
     return 'flat';
-  }, [roofTilt, status, normalizedX, isSleeping, isAutonomousActive, isTouchDevice, autoMoodIndex]);
+  }, [shakePhase, roofTilt, status, normalizedX, isSleeping, activeAutonomous, autoMoodIndex]);
 
-  // 6. Global Mouse Gaze Tracking & Inactivity Sleep Watcher
+  // Head-shake rotation angle in degrees
+  const shakeRotation = React.useMemo(() => {
+    if (shakePhase === 0) return -3.5;
+    if (shakePhase === 1) return 3.5;
+    if (shakePhase === 2) return -2.2;
+    if (shakePhase === 3) return 2.2;
+    return 0;
+  }, [shakePhase]);
+
+  // 6. Global Pointer (Mouse & Touch) Gaze Tracking with High Freedom Range
   useEffect(() => {
     if (!interactive) return;
 
@@ -242,7 +302,6 @@ export function Oxi({
       }
 
       if (isSleepingRef.current) {
-        // Wake up with an alert double-blink
         setIsSleeping(false);
         setIsBlinking(true);
         setTimeout(() => {
@@ -266,18 +325,17 @@ export function Oxi({
 
     resetSleepTimer();
 
-    const handleGlobalMouseMove = (e: MouseEvent) => {
+    const updatePointerGaze = (clientX: number, clientY: number) => {
       resetSleepTimer();
+      lastMoveTimestampRef.current = performance.now();
+      setIsCurrentlyMovingPointer(true);
 
-      // Mouse is active -> pause autonomous mode and follow pointer directly
-      if (!isTouchDevice) {
-        setIsAutonomousActive(false);
-        clearTimeout(autoTimer);
-        // If cursor rests stationary for 4s, re-enable autonomous mood exploration
-        autoTimer = setTimeout(() => {
-          setIsAutonomousActive(true);
-        }, 4000);
-      }
+      // Reset stillness timer: only go into autonomous mode after 5.5s of no pointer movement
+      clearTimeout(autoTimer);
+      autoTimer = setTimeout(() => {
+        setIsCurrentlyMovingPointer(false);
+        setIsAutonomousActive(true);
+      }, 5500);
 
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
@@ -286,54 +344,75 @@ export function Oxi({
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
-      // Half-window normalization (saturates smoothly toward screen edges)
       const halfWidth = Math.max(1, window.innerWidth / 2);
       const halfHeight = Math.max(1, window.innerHeight / 2);
 
-      const nx = Math.max(-1, Math.min(1, (e.clientX - centerX) / halfWidth));
-      const ny = Math.max(-1, Math.min(1, (e.clientY - centerY) / halfHeight));
+      const nx = Math.max(-1, Math.min(1, (clientX - centerX) / halfWidth));
+      const ny = Math.max(-1, Math.min(1, (clientY - centerY) / halfHeight));
 
       setNormalizedX(nx);
+      setNormalizedY(ny);
 
-      // Clamped eye translation within interior mask bounds (max 5.5px horizontally, 4px vertically)
+      // High-freedom travel range:
+      // Horizontally: ±12.5px (hugging the interior pillars!)
+      // Vertically: Upwards -7.5px, Downwards +25px (plunging deep toward input/footer!)
+      const targetGazeX = nx * 12.5;
+      const targetGazeY = ny > 0 ? ny * 25.0 : ny * 7.5;
+
       setGazeOffset({
-        x: nx * 5.5,
-        y: ny * 4
+        x: targetGazeX,
+        y: targetGazeY
       });
+    };
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      updatePointerGaze(e.clientX, e.clientY);
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      const touch = e.touches[0];
+      updatePointerGaze(touch.clientX, touch.clientY);
     };
 
     const handleWindowLeave = () => {
       setGazeOffset({ x: 0, y: 0 });
       setNormalizedX(0);
+      setNormalizedY(0);
+      setIsCurrentlyMovingPointer(false);
     };
 
     window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
+    window.addEventListener('touchmove', handleGlobalTouchMove, { passive: true });
+    window.addEventListener('touchstart', handleGlobalTouchMove, { passive: true });
     document.addEventListener('mouseleave', handleWindowLeave);
 
     return () => {
       clearTimeout(autoTimer);
       if (sleepTimerRef.current) clearTimeout(sleepTimerRef.current);
       window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('touchmove', handleGlobalTouchMove);
+      window.removeEventListener('touchstart', handleGlobalTouchMove);
       document.removeEventListener('mouseleave', handleWindowLeave);
     };
-  }, [interactive, status, isTouchDevice]);
+  }, [interactive, status]);
 
   // 7. Ambient Micro-Wander Drift (Subtle organic saccades)
   useEffect(() => {
-    if (status !== 'idle' || !interactive || isSleeping) return;
+    if (status !== 'idle' || !interactive || isSleeping || shakePhase >= 0) return;
 
     const interval = setInterval(() => {
-      const driftX = (Math.random() - 0.5) * 2.2;
+      const driftX = (Math.random() - 0.5) * 2.0;
       const driftY = (Math.random() - 0.5) * 1.5;
       setMicroWander({ x: driftX, y: driftY });
     }, 2400);
 
     return () => clearInterval(interval);
-  }, [status, interactive, isSleeping]);
+  }, [status, interactive, isSleeping, shakePhase]);
 
   // 8. Biological Multi-Cadence Blinking (Double-blinks, single-blinks, soft-blinks)
   useEffect(() => {
-    if (status !== 'idle' || isSleeping) return;
+    if (status !== 'idle' || isSleeping || shakePhase >= 0) return;
 
     let isCancelled = false;
     let timerId: NodeJS.Timeout;
@@ -389,7 +468,7 @@ export function Oxi({
       isCancelled = true;
       if (timerId) clearTimeout(timerId);
     };
-  }, [status, isSleeping]);
+  }, [status, isSleeping, shakePhase]);
 
   // 9. Extraction Saccade Scan Rhythm
   useEffect(() => {
@@ -403,7 +482,7 @@ export function Oxi({
 
     const animateScan = (time: number) => {
       const elapsed = (time - startTime) / 1000;
-      const sweep = Math.sin(elapsed * Math.PI * 2.8) * 3.2;
+      const sweep = Math.sin(elapsed * Math.PI * 2.8) * 3.5;
       setScanOffset(sweep);
       animationFrameId = requestAnimationFrame(animateScan);
     };
@@ -412,32 +491,110 @@ export function Oxi({
     return () => cancelAnimationFrame(animationFrameId);
   }, [status]);
 
-  // 10. Interactive Click / Tap Wink Reaction (Easter Egg)
+  // 10. Interactive Click / Tap "Wake-up Head Shake" Easter Egg
   const handleClick = useCallback(() => {
     if (onClick) onClick();
-    if (isWinking) return;
+    if (shakePhase >= 0) return; // already in shake sequence
 
-    setIsWinking(true);
-    // Advance autonomous mood when tapped
-    if (isAutonomousActive || isTouchDevice) {
-      setAutoMoodIndex((prev) => (prev + 1) % AUTO_MOODS.length);
+    // Clear any previous shake timers
+    shakeTimersRef.current.forEach(clearTimeout);
+    shakeTimersRef.current = [];
+
+    if (isSleepingRef.current) {
+      setIsSleeping(false);
     }
-    setTimeout(() => {
-      setIsWinking(false);
-    }, 240);
-  }, [onClick, isWinking, isAutonomousActive, isTouchDevice]);
 
-  // 11. Dynamic Ceiling Coordinates (3-Way Morph)
+    // Step 0: Start shake left (0ms)
+    setShakePhase(0);
+
+    // Step 1: Swing right (140ms)
+    shakeTimersRef.current.push(
+      setTimeout(() => {
+        setShakePhase(1);
+      }, 140)
+    );
+
+    // Step 2: Swing left (280ms)
+    shakeTimersRef.current.push(
+      setTimeout(() => {
+        setShakePhase(2);
+      }, 280)
+    );
+
+    // Step 3: Swing right (420ms)
+    shakeTimersRef.current.push(
+      setTimeout(() => {
+        setShakePhase(3);
+      }, 420)
+    );
+
+    // Step 4: Center & alert first blink (560ms)
+    shakeTimersRef.current.push(
+      setTimeout(() => {
+        setShakePhase(4);
+        setIsBlinking(true);
+        shakeTimersRef.current.push(
+          setTimeout(() => {
+            setIsBlinking(false);
+          }, 70)
+        );
+      }, 560)
+    );
+
+    // Step 5: Second quick wake-up blink (670ms)
+    shakeTimersRef.current.push(
+      setTimeout(() => {
+        setShakePhase(5);
+        setIsBlinking(true);
+        shakeTimersRef.current.push(
+          setTimeout(() => {
+            setIsBlinking(false);
+          }, 65)
+        );
+      }, 670)
+    );
+
+    // Step 6: Complete & return to normal tracking (780ms)
+    shakeTimersRef.current.push(
+      setTimeout(() => {
+        setShakePhase(-1);
+      }, 780)
+    );
+  }, [onClick, shakePhase]);
+
+  // Clear timers on unmount
+  useEffect(() => {
+    return () => {
+      shakeTimersRef.current.forEach(clearTimeout);
+    };
+  }, []);
+
+  // 11. Dynamic Ceiling Coordinates (3-Way Morph + Downward Brow Descending Dip)
   const ceilingY = React.useMemo(() => {
-    if (dynamicTilt === 'left') {
-      return { left: 36, right: 22 };
+    // When in click-shake mode, ceiling follows the energetic head shake
+    if (shakePhase === 0 || shakePhase === 2) {
+      return { left: 38, right: 20 };
     }
-    if (dynamicTilt === 'flat') {
+    if (shakePhase === 1 || shakePhase === 3) {
+      return { left: 20, right: 38 };
+    }
+    if (shakePhase >= 4) {
       return { left: 26, right: 26 };
     }
+
+    // When cursor is pointing downwards, the roof brow dips down noticeably into the frame
+    // up to +18px when cursor is at the bottom of the viewport
+    const dip = status === 'idle' && !isSleeping ? Math.max(0, currentNy) * 18 : 0;
+
+    if (dynamicTilt === 'left') {
+      return { left: 36 + dip * 1.15, right: 22 + dip * 0.75 };
+    }
+    if (dynamicTilt === 'flat') {
+      return { left: 26 + dip, right: 26 + dip };
+    }
     // tilt-right (signature slant)
-    return { left: 22, right: 36 };
-  }, [dynamicTilt]);
+    return { left: 22 + dip * 0.75, right: 36 + dip * 1.15 };
+  }, [shakePhase, dynamicTilt, currentNy, status, isSleeping]);
 
   // Unified Portal Frame Path
   const framePath = `M 12 92 L 12 10 L 88 10 L 88 92 L 74 92 L 74 ${ceilingY.right} L 26 ${ceilingY.left} L 26 92 Z`;
@@ -445,10 +602,76 @@ export function Oxi({
   // Interior opening clipping path
   const openingClipPath = `M 26 94 L 26 ${ceilingY.left} L 74 ${ceilingY.right} L 74 94 Z`;
 
-  // 12. Expression & Eye Shape Geometry
+  // Combined Raw Gaze Offsets
+  const focusOffsetY = isFocused && status === 'idle' && !isSleeping && shakePhase < 0 ? 6.0 : 0;
+  const nodOffsetY = isNodding ? 3.5 : 0;
+
+  // Shake gaze displacement
+  const shakeGaze = React.useMemo(() => {
+    if (shakePhase === 0) return { x: -12.0, y: -1.0 };
+    if (shakePhase === 1) return { x: 12.0, y: -1.0 };
+    if (shakePhase === 2) return { x: -8.5, y: 0 };
+    if (shakePhase === 3) return { x: 8.5, y: 0 };
+    if (shakePhase >= 4) return { x: 0, y: 0 };
+    return null;
+  }, [shakePhase]);
+
+  const autoGaze = activeAutonomous ? AUTO_MOODS[autoMoodIndex].gaze : { x: 0, y: 0 };
+
+  const rawGazeX =
+    (shakeGaze !== null
+      ? shakeGaze.x
+      : activeAutonomous
+      ? autoGaze.x
+      : gazeOffset.x) + (status === 'idle' && !isSleeping && shakePhase < 0 ? microWander.x : 0);
+
+  const rawGazeY =
+    (shakeGaze !== null
+      ? shakeGaze.y
+      : isSleeping
+      ? 2.0
+      : activeAutonomous
+      ? autoGaze.y
+      : gazeOffset.y) +
+    (status === 'idle' && !isSleeping && shakePhase < 0 ? microWander.y : 0) +
+    focusOffsetY +
+    nodOffsetY +
+    scrollGazeY;
+
+  // Clamp effective gaze coordinates with deep vertical freedom (+26px)
+  const effectiveGazeX = Math.max(-13, Math.min(13, rawGazeX));
+  const effectiveGazeY = Math.max(-8.5, Math.min(27, rawGazeY));
+
+  // Parallelogram Skew Angle for watchful corner gaze or energetic head shake
+  const skewAngle = React.useMemo(() => {
+    if (shakePhase === 0 || shakePhase === 2) return 18;
+    if (shakePhase === 1 || shakePhase === 3) return -18;
+    if (shakePhase >= 4) return 0;
+
+    if (status === 'idle' && !isSleeping) {
+      return Math.max(-20, Math.min(20, -currentNx * 18));
+    }
+    return 0;
+  }, [shakePhase, status, isSleeping, currentNx]);
+
+  // 12. Dynamic Expression & Eye Shape Geometry (Shape scaling based on gaze & moods)
   const eyeConfig = React.useMemo(() => {
     const baseX = 50;
-    const baseY = 52;
+    const baseY = 46; // Base position allowing deep downward plunge
+
+    // Click shake: wide alert startled eyes
+    if (shakePhase >= 0 && shakePhase < 4) {
+      return {
+        width: 8.5,
+        height: isBlinking ? 1 : 7.2,
+        gap: 4,
+        baseX: baseX + 1.5,
+        baseY,
+        radius: 1.0,
+        leftHeight: isBlinking ? 1 : 7.2,
+        rightHeight: isBlinking ? 1 : 7.2
+      };
+    }
 
     if (status === 'extracting') {
       return {
@@ -456,7 +679,7 @@ export function Oxi({
         height: isBlinking ? 1 : 3.8,
         gap: 4,
         baseX: baseX + scanOffset,
-        baseY,
+        baseY: baseY + 4,
         radius: 0.5,
         leftHeight: isBlinking ? 1 : 3.8,
         rightHeight: isBlinking ? 1 : 3.8
@@ -469,7 +692,7 @@ export function Oxi({
         height: isBlinking ? 1 : 14,
         gap: 4.5,
         baseX,
-        baseY: baseY - 1,
+        baseY: baseY + 3,
         radius: 0.8,
         leftHeight: isBlinking ? 1 : 14,
         rightHeight: isBlinking ? 1 : 14
@@ -482,7 +705,7 @@ export function Oxi({
         height: 6,
         gap: 4,
         baseX: baseX - 2,
-        baseY: baseY + 1,
+        baseY: baseY + 4,
         radius: 0.5,
         leftHeight: isBlinking ? 1 : 6.5,
         rightHeight: isBlinking ? 1 : 3.2 // Asymmetric squint
@@ -492,11 +715,11 @@ export function Oxi({
     // Sleep Mode: Restful half-lidded slits
     if (isSleeping) {
       return {
-        width: 7.5,
+        width: 7.8,
         height: 1.8,
         gap: 4,
         baseX: baseX + 1.5,
-        baseY: baseY + 2,
+        baseY: baseY + 6,
         radius: 0.5,
         leftHeight: 1.8,
         rightHeight: 1.8
@@ -504,12 +727,13 @@ export function Oxi({
     }
 
     // Autonomous Mode (Mobile / stationary cursor exploration)
-    if (status === 'idle' && !isFocused && (isAutonomousActive || isTouchDevice)) {
+    if (activeAutonomous) {
       const currentMood = AUTO_MOODS[autoMoodIndex];
       const customScale = currentMood.eyeScale;
-      const baseHeight = isBlinking ? 1 : (customScale?.leftH ?? 5);
-      const rightBaseHeight = isBlinking ? 1 : isWinking ? 1 : (customScale?.rightH ?? 5);
-      const customWidth = customScale?.w ?? 7.5;
+      const baseHeight = isBlinking ? 1 : (customScale?.leftH ?? 5.2);
+      const rightBaseHeight = isBlinking ? 1 : (customScale?.rightH ?? 5.2);
+      const customWidth = customScale?.w ?? 8.0;
+      const customRadius = customScale?.radius ?? 0.6;
 
       return {
         width: customWidth,
@@ -517,64 +741,70 @@ export function Oxi({
         gap: 4,
         baseX: baseX + 1.5,
         baseY,
-        radius: 0.5,
+        radius: customRadius,
         leftHeight: baseHeight,
         rightHeight: rightBaseHeight
       };
     }
 
-    // Default Idle Desktop tracking (with attentive focus and wink support)
-    const normalHeight = isBlinking ? 1 : isFocused ? 5.6 : 5;
+    // Dynamic Idle Tracking: Animate eye size & shape based on gaze direction!
+    let dynamicW = 7.8;
+    let dynamicLeftH = 5.2;
+    let dynamicRightH = 5.2;
+    let dynamicR = 0.6;
+
+    // Looking downwards: Eyelids compress into sleek, wider slits
+    if (effectiveGazeY > 6) {
+      const downFactor = Math.min(1, (effectiveGazeY - 6) / 18);
+      dynamicW = 7.8 + downFactor * 1.6; // widens to 9.4
+      dynamicLeftH = 5.2 - downFactor * 1.4; // compresses to ~3.8
+      dynamicRightH = 5.2 - downFactor * 1.4;
+      dynamicR = 0.5;
+    } else if (effectiveGazeY < -2) {
+      // Looking upwards: Eyes dilate larger in curiosity
+      const upFactor = Math.min(1, Math.abs(effectiveGazeY + 2) / 6);
+      dynamicLeftH = 5.2 + upFactor * 2.5; // expands to ~7.7
+      dynamicRightH = 5.2 + upFactor * 2.5;
+      dynamicW = 7.8 + upFactor * 0.8;
+      dynamicR = 1.2;
+    }
+
+    // Looking sideways: Natural perspective asymmetry
+    if (effectiveGazeX > 4) {
+      const sideFactor = Math.min(1, (effectiveGazeX - 4) / 8);
+      dynamicRightH += sideFactor * 1.4;
+      dynamicLeftH -= sideFactor * 0.5;
+    } else if (effectiveGazeX < -4) {
+      const sideFactor = Math.min(1, Math.abs(effectiveGazeX + 4) / 8);
+      dynamicLeftH += sideFactor * 1.4;
+      dynamicRightH -= sideFactor * 0.5;
+    }
+
+    const finalLeftH = isBlinking ? 1 : isFocused ? 5.8 : dynamicLeftH;
+    const finalRightH = isBlinking ? 1 : isFocused ? 5.8 : dynamicRightH;
+
     return {
-      width: 7.5,
-      height: normalHeight,
+      width: dynamicW,
+      height: finalLeftH,
       gap: 4,
       baseX: baseX + 1.5,
       baseY,
-      radius: 0.5,
-      leftHeight: normalHeight,
-      rightHeight: isWinking ? 1 : normalHeight
+      radius: dynamicR,
+      leftHeight: finalLeftH,
+      rightHeight: finalRightH
     };
   }, [
+    shakePhase,
     status,
     isBlinking,
-    isWinking,
     scanOffset,
     isSleeping,
     isFocused,
-    isAutonomousActive,
-    isTouchDevice,
-    autoMoodIndex
+    activeAutonomous,
+    autoMoodIndex,
+    effectiveGazeX,
+    effectiveGazeY
   ]);
-
-  // Combined Eye Coordinates
-  const focusOffsetY = isFocused && status === 'idle' && !isSleeping ? 3.0 : 0;
-  const nodOffsetY = isNodding ? 2.4 : 0;
-
-  // Autonomous gaze offsets from mood cycle
-  const autoGaze =
-    (isAutonomousActive || isTouchDevice) && status === 'idle' && !isSleeping && !isFocused
-      ? AUTO_MOODS[autoMoodIndex].gaze
-      : { x: 0, y: 0 };
-
-  const rawGazeX =
-    (isAutonomousActive || isTouchDevice ? autoGaze.x : gazeOffset.x) +
-    (status === 'idle' && !isSleeping ? microWander.x : 0);
-
-  const rawGazeY =
-    (isSleeping
-      ? 1.5
-      : isAutonomousActive || isTouchDevice
-      ? autoGaze.y
-      : gazeOffset.y) +
-    (status === 'idle' && !isSleeping ? microWander.y : 0) +
-    focusOffsetY +
-    nodOffsetY +
-    scrollGazeY;
-
-  // Clamp effective gaze coordinates safely within interior opening
-  const effectiveGazeX = Math.max(-5.5, Math.min(5.5, rawGazeX));
-  const effectiveGazeY = Math.max(-4.5, Math.min(5.5, rawGazeY));
 
   const leftEyeY = eyeConfig.baseY + effectiveGazeY - eyeConfig.leftHeight / 2;
   const leftEyeX =
@@ -585,14 +815,21 @@ export function Oxi({
   const rightEyeY = rightEyeBaseY + effectiveGazeY - eyeConfig.rightHeight / 2;
   const rightEyeX = eyeConfig.baseX + effectiveGazeX + eyeConfig.gap / 2;
 
+  // Centers for accurate SVG local skew transformation
+  const leftEyeCenterX = leftEyeX + eyeConfig.width / 2;
+  const leftEyeCenterY = leftEyeY + eyeConfig.leftHeight / 2;
+  const rightEyeCenterX = rightEyeX + eyeConfig.width / 2;
+  const rightEyeCenterY = rightEyeY + eyeConfig.rightHeight / 2;
+
   return (
     <div
       ref={containerRef}
       onClick={handleClick}
-      className={`inline-flex items-center justify-center select-none cursor-pointer transition-transform active:scale-95 duration-100 ${className}`}
+      className={`inline-flex items-center justify-center select-none cursor-pointer transition-transform duration-100 ${className}`}
       style={{
         width: typeof size === 'number' ? `${size}px` : size,
-        height: typeof size === 'number' ? `${size}px` : size
+        height: typeof size === 'number' ? `${size}px` : size,
+        transform: shakeRotation ? `rotate(${shakeRotation}deg)` : undefined
       }}
       role="img"
       aria-label={ariaLabel}
@@ -610,10 +847,10 @@ export function Oxi({
           </clipPath>
         </defs>
 
-        {/* Unified Portal Frame with 3-way dynamic roof morphing */}
+        {/* Unified Portal Frame with 3-way dynamic roof morphing + downward brow dip */}
         <path
           d={framePath}
-          className="fill-[var(--colors-ink)] transition-all duration-300 ease-out"
+          className="fill-[var(--colors-ink)] transition-all duration-150 ease-out"
         />
 
         {/*
@@ -622,25 +859,35 @@ export function Oxi({
           they automatically and cleanly clip against the geometry.
         */}
         <g clipPath={`url(#${clipId})`}>
-          {/* Left Eye */}
-          <rect
-            x={leftEyeX}
-            y={leftEyeY}
-            width={eyeConfig.width}
-            height={eyeConfig.leftHeight}
-            rx={eyeConfig.radius}
-            className="fill-[var(--colors-ink)] transition-all duration-200 ease-out"
-          />
+          {/* Left Eye with local parallelogram corner skew */}
+          <g
+            transform={`translate(${leftEyeCenterX}, ${leftEyeCenterY}) skewX(${skewAngle}) translate(${-leftEyeCenterX}, ${-leftEyeCenterY})`}
+            className="transition-transform duration-100 ease-out"
+          >
+            <rect
+              x={leftEyeX}
+              y={leftEyeY}
+              width={eyeConfig.width}
+              height={eyeConfig.leftHeight}
+              rx={eyeConfig.radius}
+              className="fill-[var(--colors-ink)] transition-all duration-100 ease-out"
+            />
+          </g>
 
-          {/* Right Eye */}
-          <rect
-            x={rightEyeX}
-            y={rightEyeY}
-            width={eyeConfig.width}
-            height={eyeConfig.rightHeight}
-            rx={eyeConfig.radius}
-            className="fill-[var(--colors-ink)] transition-all duration-200 ease-out"
-          />
+          {/* Right Eye with local parallelogram corner skew */}
+          <g
+            transform={`translate(${rightEyeCenterX}, ${rightEyeCenterY}) skewX(${skewAngle}) translate(${-rightEyeCenterX}, ${-rightEyeCenterY})`}
+            className="transition-transform duration-100 ease-out"
+          >
+            <rect
+              x={rightEyeX}
+              y={rightEyeY}
+              width={eyeConfig.width}
+              height={eyeConfig.rightHeight}
+              rx={eyeConfig.radius}
+              className="fill-[var(--colors-ink)] transition-all duration-100 ease-out"
+            />
+          </g>
         </g>
       </svg>
     </div>
