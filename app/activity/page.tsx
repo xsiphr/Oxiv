@@ -70,8 +70,8 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
 
   const { commits, error } = await getCommits(selectedYear);
 
-  // Available years: 2026 and 2025 as demonstrated in GitHub specs
-  const availableYears: number[] = [2026, 2025];
+  // Available years: strictly 2026 (2025 removed per feedback)
+  const availableYears: number[] = [2026];
   if (currentYear > 2026 && !availableYears.includes(currentYear)) {
     availableYears.unshift(currentYear);
   }

@@ -61,7 +61,7 @@ export function ActivityView({
   commits,
   error,
   selectedYear,
-  availableYears = [2026, 2025],
+  availableYears = [2026],
 }: ActivityViewProps) {
   const { t, locale } = useI18n();
   const router = useRouter();
@@ -292,15 +292,6 @@ export function ActivityView({
         {/* Hero Header */}
         <section className="w-full">
           <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-3 sm:space-y-4">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <span className="font-mono text-[11px] font-semibold tracking-widest text-[var(--colors-muted)] uppercase bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] px-2.5 py-1 rounded-md">
-                xsiphr/Oxiv
-              </span>
-              <span className="font-mono text-xs text-[var(--colors-body)]">
-                {t.activity.totalCommits(commits.length)}
-              </span>
-            </div>
-
             <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--colors-ink)] tracking-tight">
               {t.activity.title}
             </h1>
@@ -715,7 +706,7 @@ export function ActivityView({
                           onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
                           className="font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] px-4 py-2 rounded-lg hover:bg-[var(--colors-surface-elevated)] transition-colors inline-flex items-center gap-2 cursor-pointer border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] select-none"
                         >
-                          <span>{t.activity.showMore(nextIncrement)}</span>
+                          <span>{t.activity.showMore(remainingCount)}</span>
                           <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200" />
                         </button>
                       ) : (
