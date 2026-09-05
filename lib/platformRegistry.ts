@@ -129,7 +129,10 @@ export interface LookupResult {
  * Normalizes input and extracts a clean hostname.
  */
 export function extractHostname(input: string): string | null {
-  const trimmed = input.trim().replace(/^['"`\s]+|['"`\s]+$/g, '');
+  const trimmed = input
+    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '')
+    .trim()
+    .replace(/^['"`\s]+|['"`\s]+$/g, '');
   if (!trimmed) return null;
 
   try {

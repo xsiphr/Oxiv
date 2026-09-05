@@ -72,7 +72,10 @@ export function ExtractionInput({ onExtract, isLoading, externalError, resetSign
   }, [externalError]);
 
   const sanitizeUrl = (val: string): string => {
-    return val.trim().replace(/^['"`\s]+|['"`\s]+$/g, '');
+    return val
+      .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '')
+      .trim()
+      .replace(/^['"`\s]+|['"`\s]+$/g, '');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

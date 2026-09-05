@@ -144,8 +144,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       );
     }
 
-    const url = body?.url;
-    if (!url || typeof url !== 'string' || !url.trim()) {
+    const rawUrl = body?.url;
+    if (!rawUrl || typeof rawUrl !== 'string') {
       return NextResponse.json(
         {
           success: false,
@@ -159,9 +159,25 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       );
     }
 
-    const trimmedUrl = url.trim();
-    const lookup = lookupPlatform(trimmedUrl);
-    return handleExtraction(trimmedUrl, lookup);
+    const sanitizedUrl = rawUrl
+      .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '')
+      .trim();
+    if (!sanitizedUrl) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'INVALID_URL',
+            message: "This doesn't look like a valid link. Check the URL and try again.",
+            statusHint: 400,
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const lookup = lookupPlatform(sanitizedUrl);
+    return handleExtraction(sanitizedUrl, lookup);
   } catch (error: unknown) {
     console.error('API /api/extract POST Error:', error);
     return NextResponse.json(

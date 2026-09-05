@@ -121,13 +121,14 @@ export function identifyFacebookContentType(url: string): FacebookContentType {
   const clean = url.trim().toLowerCase();
 
   // 1. Reel
-  if (/\/reel\/\d+/i.test(clean)) return 'reel';
+  if (/\/reel\/\d+/i.test(clean) || /\/share\/r\//i.test(clean)) return 'reel';
 
   // 2. Video / Watch
   if (
     /\/videos\/\d+/i.test(clean) ||
     /\/watch\/?\?v=\d+/i.test(clean) ||
-    /fb\.watch\//i.test(clean)
+    /fb\.watch\//i.test(clean) ||
+    /\/share\/v\//i.test(clean)
   ) {
     return 'video';
   }
@@ -158,8 +159,12 @@ export function identifyFacebookContentType(url: string): FacebookContentType {
     return 'group_post';
   }
 
-  // 6. Generic Page Post / Story Permalink
-  if (/\/posts\/[0-9a-zA-Z_.-]+/i.test(clean) || /permalink\.php\?[^"'\s<>]*story_fbid=/i.test(clean)) {
+  // 6. Generic Page Post / Story Permalink / Mobile Share Link
+  if (
+    /\/posts\/[0-9a-zA-Z_.-]+/i.test(clean) ||
+    /(?:permalink|story)\.php\?[^"'\s<>]*story_fbid=/i.test(clean) ||
+    /\/share\/p\//i.test(clean)
+  ) {
     return 'post';
   }
 
@@ -489,7 +494,7 @@ export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
   // Extract ID from URL for stable resource identification
   const idMatch =
     canonicalUrl.match(/(?:videos|reel|photos|posts)\/([0-9a-zA-Z_.-]+)/i) ||
-    canonicalUrl.match(/[?&](?:v|fbid|set=(?:a|pcb)\.)(\d+)/i);
+    canonicalUrl.match(/[?&](?:v|fbid|story_fbid|set=(?:a|pcb)\.)(\d+)/i);
   const cleanId = idMatch ? idMatch[1] : String(Date.now());
 
   // Harvest photo candidates from grid_media, group_mediaset, all_subattachments & attachments
