@@ -57,6 +57,42 @@ const MONTH_LABEL_HEIGHT = 22;
 const SVG_HEIGHT = MONTH_LABEL_HEIGHT + 7 * CELL_STEP; // 144.5px
 const PAGE_SIZE = 5;
 
+// Custom silky-smooth easing scroll with controlled duration and navbar offset (matching home page)
+function smoothScrollTo(targetY: number, duration: number = 850) {
+  if (typeof window === 'undefined') return;
+
+  const startY = window.scrollY || window.pageYOffset;
+  const distance = targetY - startY;
+  if (Math.abs(distance) < 2) return;
+
+  const startTime = performance.now();
+
+  const easeInOutCubic = (t: number) =>
+    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  const step = (currentTime: number) => {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeProgress = easeInOutCubic(progress);
+
+    window.scrollTo(0, startY + distance * easeProgress);
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  };
+
+  requestAnimationFrame(step);
+}
+
+const scrollToElement = (element: HTMLElement | null, duration: number = 850, offset: number = 76) => {
+  if (!element || typeof window === 'undefined') return;
+  const elementRect = element.getBoundingClientRect();
+  const absoluteTop = elementRect.top + window.pageYOffset;
+  const targetY = Math.max(0, absoluteTop - offset);
+  smoothScrollTo(targetY, duration);
+};
+
 export function ActivityView({
   commits,
   error,
@@ -68,6 +104,31 @@ export function ActivityView({
 
   // Commit history pagination: show max 5 at a time
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const commitsSectionRef = useRef<HTMLElement>(null);
+
+  const handleShowMore = () => {
+    const nextTargetIndex = visibleCount;
+    setVisibleCount((prev) => prev + PAGE_SIZE);
+
+    // Smooth navigation downward to newly revealed commits matching home page behavior
+    setTimeout(() => {
+      const targetElement = document.getElementById(`commit-row-${nextTargetIndex}`);
+      if (targetElement) {
+        scrollToElement(targetElement, 850, 76);
+      }
+    }, 120);
+  };
+
+  const handleShowLess = () => {
+    setVisibleCount(PAGE_SIZE);
+
+    // Smooth scroll back to commits section header
+    setTimeout(() => {
+      if (commitsSectionRef.current) {
+        scrollToElement(commitsSectionRef.current, 750, 80);
+      }
+    }, 120);
+  };
 
   // Mobile dropdown state
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -628,7 +689,10 @@ export function ActivityView({
             </section>
 
             {/* Commit History Ledger Section with max 5 per page increment */}
-            <section className="w-full border-t border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas)]">
+            <section
+              ref={commitsSectionRef}
+              className="w-full border-t border-dashed border-[var(--colors-hairline)] bg-[var(--colors-canvas)] scroll-mt-20"
+            >
               <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6">
                 <div>
                   <h2 className="font-display text-xl sm:text-2xl font-bold text-[var(--colors-ink)] tracking-tight">
@@ -645,7 +709,7 @@ export function ActivityView({
                   className="rounded-xl border border-[var(--colors-hairline)] bg-[var(--colors-surface-card)] shadow-xs overflow-hidden"
                 >
                   <div className="divide-y divide-dashed divide-[var(--colors-hairline)]">
-                    {displayedCommits.map((c) => {
+                    {displayedCommits.map((c, index) => {
                       const firstLineMessage =
                         c.commit?.message?.split('\n')[0] || 'Commit';
                       const authorName =
@@ -658,6 +722,7 @@ export function ActivityView({
                       return (
                         <div
                           key={c.sha}
+                          id={`commit-row-${index}`}
                           className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[var(--colors-surface-elevated)]/60 transition-colors group"
                         >
                           {/* Commit Title & Author */}
@@ -709,7 +774,7 @@ export function ActivityView({
                       {remainingCount > 0 ? (
                         <button
                           type="button"
-                          onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                          onClick={handleShowMore}
                           className="font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] px-4 py-2 rounded-lg hover:bg-[var(--colors-surface-elevated)] transition-colors inline-flex items-center gap-2 cursor-pointer border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] select-none"
                         >
                           <span>{t.activity.showMore(remainingCount)}</span>
@@ -718,7 +783,7 @@ export function ActivityView({
                       ) : (
                         <button
                           type="button"
-                          onClick={() => setVisibleCount(PAGE_SIZE)}
+                          onClick={handleShowLess}
                           className="font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] px-4 py-2 rounded-lg hover:bg-[var(--colors-surface-elevated)] transition-colors inline-flex items-center gap-2 cursor-pointer border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] select-none"
                         >
                           <span>{t.activity.showLess}</span>
