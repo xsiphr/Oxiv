@@ -51,6 +51,7 @@ export function Navbar({ status: _status = 'idle' }: NavbarProps) {
   };
 
   const isHomeActive = pathname === '/';
+  const isRecentsActive = pathname === '/recents';
   const isAboutActive = pathname.startsWith('/about');
   const isSupportActive = pathname === '/support';
 
@@ -86,6 +87,21 @@ export function Navbar({ status: _status = 'idle' }: NavbarProps) {
           >
             <span>{t.nav.downloader}</span>
             {isHomeActive && (
+              <span className="absolute bottom-0 inset-x-0 h-0.5 bg-[var(--colors-ink)] rounded-full animate-fadeIn" />
+            )}
+          </Link>
+
+          {/* Recents Link */}
+          <Link
+            href="/recents"
+            className={`font-mono text-xs sm:text-sm tracking-tight transition-colors py-1.5 relative ${
+              isRecentsActive
+                ? 'text-[var(--colors-ink)] font-bold'
+                : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
+            }`}
+          >
+            <span>{t.nav.recents}</span>
+            {isRecentsActive && (
               <span className="absolute bottom-0 inset-x-0 h-0.5 bg-[var(--colors-ink)] rounded-full animate-fadeIn" />
             )}
           </Link>
@@ -218,6 +234,19 @@ export function Navbar({ status: _status = 'idle' }: NavbarProps) {
               <span>01. {t.nav.downloader}</span>
             </Link>
 
+            {/* Recents Link */}
+            <Link
+              href="/recents"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`p-3 rounded-lg font-mono text-xs flex items-center transition-colors ${
+                pathname === '/recents'
+                  ? 'bg-[var(--colors-surface-elevated)] text-[var(--colors-ink)] font-bold'
+                  : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
+              }`}
+            >
+              <span>02. {t.nav.recents}</span>
+            </Link>
+
             {/* About Top-Level Item */}
             <Link
               href="/about"
@@ -228,7 +257,7 @@ export function Navbar({ status: _status = 'idle' }: NavbarProps) {
                   : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
               }`}
             >
-              <span>02. {t.nav.about}</span>
+              <span>03. {t.nav.about}</span>
             </Link>
 
             {/* About Sub-sections (Indented sub-links) */}
@@ -278,7 +307,7 @@ export function Navbar({ status: _status = 'idle' }: NavbarProps) {
                   : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
               }`}
             >
-              <span>03. {t.nav.support}</span>
+              <span>04. {t.nav.support}</span>
             </Link>
           </nav>
 

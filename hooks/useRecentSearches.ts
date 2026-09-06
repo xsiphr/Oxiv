@@ -5,7 +5,7 @@ import { Platform, RecentExtraction } from '@/types';
 import { decodeHtmlEntities } from '@/lib/utils';
 
 const STORAGE_KEY = 'oxiv_recents_v1';
-const MAX_RECENTS = 10;
+const MAX_RECENTS = 50;
 
 export function useRecentSearches() {
   const [recents, setRecents] = useState<RecentExtraction[]>([]);

@@ -1,5 +1,6 @@
-import { PageSkeleton } from '@/components/ui/PageSkeleton';
+import React from 'react';
+import { OxiHeroLoader } from '@/components/ui/OxiHeroLoader';
 
 export default function Loading() {
-  return <PageSkeleton />;
+  return <OxiHeroLoader />;
 }

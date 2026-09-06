@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { History } from 'lucide-react';
 import { Navbar } from '@/components/ui/Navbar';
 import { ExtractionInput } from '@/components/ui/ExtractionInput';
 import { TerminalStream, StreamStepState } from '@/components/ui/TerminalStream';
 import { MediaPreview } from '@/components/media/MediaPreview';
 import { DiagnosticCard } from '@/components/ui/DiagnosticCard';
-import { RecentExtractions } from '@/components/ui/RecentExtractions';
 import { Footer } from '@/components/ui/Footer';
 import { ExtractionStatus, MediaResult, Platform, ExtractionError, ApiResponse } from '@/types';
 import { detectPlatform } from '@/lib/platformRegistry';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
-import { PageSkeleton } from '@/components/ui/PageSkeleton';
+import { OxiHeroLoader } from '@/components/ui/OxiHeroLoader';
 import { useI18n } from '@/lib/i18n';
 
 // Custom silky-smooth easing scroll with controlled duration and navbar offset
@@ -62,11 +63,11 @@ export default function Home() {
   const [extractionError, setExtractionError] = useState<ExtractionError | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
 
-  const terminalRef = React.useRef<HTMLElement>(null);
+  const terminalRef = React.useRef<HTMLDivElement>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
-  const errorRef = React.useRef<HTMLElement>(null);
+  const errorRef = React.useRef<HTMLDivElement>(null);
 
-  const { recents, isLoaded, addRecent, removeRecent, clearRecents } = useRecentSearches();
+  const { recents, isLoaded, addRecent } = useRecentSearches();
 
   // Gentle, cinematic auto-scroll to corresponding section during extraction lifecycle
   useEffect(() => {
@@ -299,8 +300,24 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [status]);
 
+  // Read incoming ?url=... query param from /recents redirection
+  useEffect(() => {
+    if (!isReady || typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const targetUrl = params.get('url');
+      if (targetUrl) {
+        setPrefilledUrl(targetUrl);
+        handleExtract(targetUrl);
+        window.history.replaceState({}, '', '/');
+      }
+    } catch {
+      // ignore
+    }
+  }, [isReady]);
+
   if (!isReady) {
-    return <PageSkeleton />;
+    return <OxiHeroLoader />;
   }
 
   return (
@@ -310,63 +327,67 @@ export default function Home() {
 
       {/* 2. Main Body Content */}
       <main className="flex-1 flex flex-col w-full">
-        {/* Hero Section (Vertically centered on desktop in idle state, top-aligned on mobile) */}
-        <section className={`w-full ${status === 'idle' ? 'flex-1 flex flex-col' : ''}`}>
+        {/* Continuous Upper Section: Hero, Telemetry Terminal, and Diagnostic Error */}
+        <section className={`w-full ${status !== 'success' ? 'flex-1 flex flex-col' : ''}`}>
           <div
             className={`max-w-7xl w-full mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 ${
-              status === 'idle'
-                ? 'flex-1 flex flex-col items-center justify-start md:justify-center py-10 md:py-16'
-                : 'py-10 md:py-16 flex flex-col items-center justify-center'
+              status !== 'success' ? 'flex-1 flex flex-col' : ''
             }`}
           >
-            <ExtractionInput
-              onExtract={handleExtract}
-              isLoading={status === 'extracting'}
-              status={status}
-              resetSignal={resetSignal}
-              externalUrl={prefilledUrl}
-            />
-
-            {/* Client-Side Recents History (Zero Retention / localStorage) */}
-            {isLoaded && recents.length > 0 && (
-              <RecentExtractions
-                recents={recents}
-                onSelect={(selectedUrl) => {
-                  setPrefilledUrl(selectedUrl);
-                  handleExtract(selectedUrl);
-                }}
-                onRemove={removeRecent}
-                onClear={clearRecents}
+            {/* Hero Section */}
+            <div
+              className={`w-full flex flex-col items-center justify-center ${
+                status === 'idle'
+                  ? 'flex-1 py-10 md:py-16'
+                  : 'pt-10 pb-6 md:pt-16 md:pb-8'
+              }`}
+            >
+              <ExtractionInput
+                onExtract={handleExtract}
+                onReset={handleReset}
+                isLoading={status === 'extracting'}
+                status={status}
+                resetSignal={resetSignal}
+                externalUrl={prefilledUrl}
               />
+
+              {/* Minimal Recents Ledger Link Teaser */}
+              {isLoaded && recents.length > 0 && status === 'idle' && (
+                <div className="mt-5 animate-fadeIn">
+                  <Link
+                    href="/recents"
+                    className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--colors-muted)] hover:text-[var(--colors-ink)] px-3.5 py-1.5 rounded-full border border-dashed border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] bg-[var(--colors-surface-card)]/70 transition-all shadow-xs"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    <span>{t.recents.title} ({recents.length}) →</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Real-time Extraction Terminal Stream (Directly on canvas background) */}
+            {steps.length > 0 && (
+              <div ref={terminalRef} className="w-full pb-14 animate-fadeIn scroll-mt-20">
+                <TerminalStream
+                  steps={steps}
+                  url={currentUrl}
+                  platform={currentPlatform}
+                />
+              </div>
+            )}
+
+            {/* Diagnostic Card State on Error */}
+            {status === 'error' && extractionError && (
+              <div ref={errorRef} className="w-full pb-14 animate-fadeIn scroll-mt-20">
+                <DiagnosticCard
+                  error={extractionError}
+                  onReset={handleReset}
+                  onRetry={() => handleExtract(currentUrl)}
+                />
+              </div>
             )}
           </div>
         </section>
-
-        {/* Real-time Extraction Terminal Stream (Kept visible after extraction) */}
-        {steps.length > 0 && (
-          <section ref={terminalRef} className="w-full scroll-mt-20">
-            <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 pb-14 w-full animate-fadeIn">
-              <TerminalStream
-                steps={steps}
-                url={currentUrl}
-                platform={currentPlatform}
-              />
-            </div>
-          </section>
-        )}
-
-        {/* 3. Diagnostic Card State on Error (Full-width border-t) */}
-        {status === 'error' && extractionError && (
-          <section ref={errorRef} className="w-full scroll-mt-20">
-            <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 pb-14 w-full animate-fadeIn">
-              <DiagnosticCard
-                error={extractionError}
-                onReset={handleReset}
-                onRetry={() => handleExtract(currentUrl)}
-              />
-            </div>
-          </section>
-        )}
 
         {/* 4. Media Result Preview State (Full-width border-t) */}
         {status === 'success' && mediaResult && (

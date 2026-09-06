@@ -6,6 +6,7 @@ export const en: TranslationDictionary = {
     github: 'GitHub',
     langToggle: 'AR',
     downloader: 'Downloader',
+    recents: 'Recents',
     about: 'About',
     platforms: 'Platforms',
     faq: 'FAQ',
@@ -162,9 +163,21 @@ export const en: TranslationDictionary = {
   },
   recents: {
     title: 'Recent Extractions',
-    clear: 'Clear',
+    clear: 'Clear All',
     more: 'more',
     collapse: 'Collapse',
+    pageSubtitle: 'Stored entirely in your browser localStorage with zero server retention.',
+    filterAll: 'All Platforms',
+    emptyTitle: 'No extractions recorded yet',
+    emptyDesc: 'Items you extract will appear here automatically, stored privately in your browser.',
+    extractNow: 'Extract New Media',
+    reExtract: 'Re-extract',
+    copyUrl: 'Copy Link',
+    copied: 'Copied',
+    deleteItem: 'Delete',
+    confirmClear: 'Clear entire history?',
+    zeroRetentionNotice: 'Oxiv does not store history on any server. This list lives entirely in your browser localStorage.',
+    itemsCount: 'items',
   },
   metrics: {
     col1: { val: '100%', label: 'Original Quality', caption: 'Bitrate and spatial dimensions intact. Zero compression artifacts.' },
@@ -291,27 +304,27 @@ export const en: TranslationDictionary = {
     items: {
       multiPhoto: {
         title: 'Full Multi-Photo Extraction',
-        desc: 'Even large albums with dozens of photos are fully extracted — bypassing the truncation limits common in other tools.',
+        desc: 'Bypasses the 4–5 photo truncation wall. Extracts full Facebook albums up to 100+ items, TikTok photo slides, and Pinterest pins.',
       },
       zipBundling: {
-        title: 'Quality-Selectable ZIP Bundling',
-        desc: 'Choose HD, SD, or all video variants packaged alongside isolated soundtracks in one organized archive.',
+        title: 'Client-Side In-Memory ZIP',
+        desc: 'Bundle all extracted media with quality selection (HD/SD/Audio) using fflate directly in browser RAM with live progress.',
       },
-      liveProgress: {
-        title: 'Real-Time Packaging Progress',
-        desc: 'Watch live chunk-by-chunk download and compression progress directly in the browser instead of a frozen spinner.',
+      audioDemux: {
+        title: 'Isolated DASH Audio Demuxing',
+        desc: 'Demuxes standalone high-bitrate M4A and MP3 audio streams directly from DASH manifests and TikTok sound layers.',
       },
-      zeroStorage: {
-        title: 'Zero Server Storage',
-        desc: 'Every extraction and ZIP bundle executes entirely in client-side memory. No media or query history touches our disks.',
+      antiTracking: {
+        title: 'Anti-Tracking Sanitization',
+        desc: 'Strips tracking parameters (mibextid, fbclid, igsh) and cleans invisible zero-width Unicode characters injected by mobile keyboards.',
       },
-      noWatermarks: {
-        title: 'Original Masters, No Login',
-        desc: 'Direct CDN edge media without vendor watermarks, re-encoding badges, accounts, or authentication tokens.',
+      shortlinkResolution: {
+        title: 'Deep Shortlink Resolution',
+        desc: 'Resolves mobile share shortlinks (/share/p/, /share/r/, vt.tiktok) into canonical desktop endpoints without auth walls.',
       },
-      directPassthrough: {
-        title: 'Pure Bitstream Passthrough',
-        desc: 'Color profiles, spatial dimensions, and audio bitrates remain 100% bit-for-bit identical to upstream masters.',
+      masterResolution: {
+        title: 'Master Resolution Unlocking',
+        desc: 'Strips CDN sizing parameters (such as Facebook &ctp= constraints) to access original uncompressed 2048px photo masters.',
       },
     },
   },

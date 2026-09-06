@@ -2,11 +2,12 @@
 
 import React from 'react';
 import {
-  Sparkles,
   ShieldCheck,
   Layers,
   SlidersHorizontal,
-  Activity,
+  Music,
+  ArrowRightLeft,
+  Maximize2,
   Cpu,
   Lock,
   ExternalLink,
@@ -52,24 +53,24 @@ export default function PhilosophyPage() {
       description: t.features.items.zipBundling.desc,
     },
     {
-      icon: <Activity className="w-5 h-5 text-[var(--colors-ink)]" strokeWidth={1.75} />,
-      title: t.features.items.liveProgress.title,
-      description: t.features.items.liveProgress.desc,
+      icon: <Music className="w-5 h-5 text-[var(--colors-ink)]" strokeWidth={1.75} />,
+      title: t.features.items.audioDemux.title,
+      description: t.features.items.audioDemux.desc,
     },
     {
       icon: <ShieldCheck className="w-5 h-5 text-[var(--colors-ink)]" strokeWidth={1.75} />,
-      title: t.features.items.zeroStorage.title,
-      description: t.features.items.zeroStorage.desc,
+      title: t.features.items.antiTracking.title,
+      description: t.features.items.antiTracking.desc,
     },
     {
-      icon: <Sparkles className="w-5 h-5 text-[var(--colors-ink)]" strokeWidth={1.75} />,
-      title: t.features.items.noWatermarks.title,
-      description: t.features.items.noWatermarks.desc,
+      icon: <ArrowRightLeft className="w-5 h-5 text-[var(--colors-ink)]" strokeWidth={1.75} />,
+      title: t.features.items.shortlinkResolution.title,
+      description: t.features.items.shortlinkResolution.desc,
     },
     {
-      icon: <Cpu className="w-5 h-5 text-[var(--colors-ink)]" strokeWidth={1.75} />,
-      title: t.features.items.directPassthrough.title,
-      description: t.features.items.directPassthrough.desc,
+      icon: <Maximize2 className="w-5 h-5 text-[var(--colors-ink)]" strokeWidth={1.75} />,
+      title: t.features.items.masterResolution.title,
+      description: t.features.items.masterResolution.desc,
     },
   ];
 
@@ -86,14 +87,16 @@ export default function PhilosophyPage() {
           </p>
         </div>
 
-        {/* 2. Mission Lead Manifesto Card */}
-        <div id="protocol" className="scroll-mt-32 p-6 sm:p-8 rounded-xl bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] space-y-4 shadow-xs">
-          <h2 className="font-display text-xl sm:text-2xl font-bold text-[var(--colors-ink)]">
-            {t.about.missionTitle}
-          </h2>
-          <p className="font-body text-sm font-semibold text-[var(--colors-ink)] leading-relaxed">
-            {t.about.missionLead}
-          </p>
+        {/* 2. Mission Lead Manifesto (Seamless On-Canvas Layout, Not a Box Card) */}
+        <div id="protocol" className="scroll-mt-32 space-y-4 max-w-4xl">
+          <div className="space-y-2">
+            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-[var(--colors-ink)] tracking-tight">
+              {t.about.missionTitle}
+            </h2>
+            <p className="font-body text-sm sm:text-base font-semibold text-[var(--colors-ink)] leading-relaxed">
+              {t.about.missionLead}
+            </p>
+          </div>
           <div className="space-y-3 font-body text-xs sm:text-sm text-[var(--colors-body)] leading-relaxed">
             <p>{t.about.missionP1}</p>
             <p>{t.about.missionP2}</p>

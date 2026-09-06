@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { ExtractionError } from '@/types';
 import { useI18n } from '@/lib/i18n';
-import { Oxi } from './Oxi';
 
 interface DiagnosticCardProps {
   error: ExtractionError;
@@ -85,35 +84,35 @@ export function DiagnosticCard({ error, onReset, onRetry }: DiagnosticCardProps)
   const { title, description } = getDisplayContent();
 
   return (
-    <div className="w-full max-w-xl mx-auto rounded-xl bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] p-6 sm:p-7 shadow-xs transition-all duration-300">
-      <div className="flex flex-col sm:flex-row items-start gap-4">
-        {/* Oxi Persona in Diagnostic Error State */}
-        <div className="relative shrink-0 flex items-center justify-center p-2 rounded-xl bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] shadow-xs">
-          <Oxi status="error" size={38} className="shrink-0" />
+    <div className="w-full max-w-xl mx-auto py-4 transition-all duration-300 text-left rtl:text-right">
+      <div className="space-y-2">
+        {/* Status Dot + Title */}
+        <div className="flex items-center gap-2.5">
           <span
-            className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[var(--colors-surface-card)] ${
-              isAmber ? 'bg-amber-500' : 'bg-rose-500'
+            className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+              isAmber
+                ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
             }`}
           />
-        </div>
-
-        <div className="space-y-1.5 flex-1 min-w-0">
           <h2 className="font-display text-2xl font-bold text-[var(--colors-ink)] tracking-tight">
             {title}
           </h2>
-          <p className="font-body text-sm text-[var(--colors-body)] leading-relaxed">
-            {description}
-          </p>
         </div>
+
+        {/* Error Detail Description */}
+        <p className="font-body text-sm text-[var(--colors-body)] leading-relaxed ps-5">
+          {description}
+        </p>
       </div>
 
       {/* Action Row */}
-      <div className="mt-6 pt-5 border-t border-dashed border-[var(--colors-hairline)] flex items-center justify-between gap-3">
+      <div className="mt-5 pt-4 border-t border-dashed border-[var(--colors-hairline)] flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <button
             type="button"
             onClick={onReset}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] text-[var(--colors-ink)] font-body text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-xs"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] text-[var(--colors-ink)] font-body text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-[var(--colors-muted)] rtl:rotate-180" />
             <span>{t.diagnostic.tryAnother}</span>
@@ -124,7 +123,7 @@ export function DiagnosticCard({ error, onReset, onRetry }: DiagnosticCardProps)
               type="button"
               onClick={handleRetryClick}
               disabled={retryCooldown}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[var(--colors-ink)] text-[var(--colors-canvas)] hover:opacity-90 font-body text-xs font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-xs"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg bg-[var(--colors-ink)] text-[var(--colors-canvas)] hover:opacity-90 font-body text-xs font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-40 disabled:pointer-events-none shadow-xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${retryCooldown ? 'animate-spin' : ''}`} />
               <span>{retryCooldown ? t.diagnostic.waiting : t.diagnostic.retry}</span>
@@ -133,7 +132,7 @@ export function DiagnosticCard({ error, onReset, onRetry }: DiagnosticCardProps)
         </div>
 
         <span className="font-mono text-[11px] text-[var(--colors-muted)] hidden sm:inline-block">
-          <kbd className="px-1.5 py-0.5 rounded bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] text-[10px] text-[var(--colors-ink)]">ESC</kbd> {t.diagnostic.escReset}
+          <kbd className="px-1.5 py-0.5 rounded bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] text-[10px] text-[var(--colors-ink)]">ESC</kbd> {t.diagnostic.escReset}
         </span>
       </div>
     </div>
@@ -141,4 +140,3 @@ export function DiagnosticCard({ error, onReset, onRetry }: DiagnosticCardProps)
 }
 
 export default DiagnosticCard;
-

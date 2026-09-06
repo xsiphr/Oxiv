@@ -295,7 +295,7 @@ export function Oxi({
 
   // 6. Global Pointer (Mouse & Touch) Gaze Tracking with High Freedom Range
   useEffect(() => {
-    if (!interactive) return;
+    if (!interactive || status === 'extracting') return;
 
     let autoTimer: NodeJS.Timeout;
 
@@ -627,24 +627,28 @@ export function Oxi({
   const autoGaze = activeAutonomous ? AUTO_MOODS[autoMoodIndex].gaze : { x: 0, y: 0 };
 
   const rawGazeX =
-    (shakeGaze !== null
-      ? shakeGaze.x
-      : activeAutonomous
-      ? autoGaze.x
-      : gazeOffset.x) + (status === 'idle' && !isSleeping && shakePhase < 0 ? microWander.x : 0);
+    !interactive || status === 'extracting'
+      ? 0
+      : (shakeGaze !== null
+        ? shakeGaze.x
+        : activeAutonomous
+        ? autoGaze.x
+        : gazeOffset.x) + (status === 'idle' && !isSleeping && shakePhase < 0 ? microWander.x : 0);
 
   const rawGazeY =
-    (shakeGaze !== null
-      ? shakeGaze.y
-      : isSleeping
-      ? 2.0
-      : activeAutonomous
-      ? autoGaze.y
-      : gazeOffset.y) +
-    (status === 'idle' && !isSleeping && shakePhase < 0 ? microWander.y : 0) +
-    focusOffsetY +
-    nodOffsetY +
-    scrollGazeY;
+    !interactive || status === 'extracting'
+      ? 0
+      : (shakeGaze !== null
+        ? shakeGaze.y
+        : isSleeping
+        ? 2.0
+        : activeAutonomous
+        ? autoGaze.y
+        : gazeOffset.y) +
+        (status === 'idle' && !isSleeping && shakePhase < 0 ? microWander.y : 0) +
+        focusOffsetY +
+        nodOffsetY +
+        scrollGazeY;
 
   // Clamp effective gaze coordinates with deep vertical freedom (+26px)
   const effectiveGazeX = Math.max(-13, Math.min(13, rawGazeX));

@@ -6,6 +6,7 @@ export interface TranslationDictionary {
     github: string;
     langToggle: string;
     downloader: string;
+    recents: string;
     about: string;
     platforms: string;
     faq: string;
@@ -165,6 +166,18 @@ export interface TranslationDictionary {
     clear: string;
     more: string;
     collapse: string;
+    pageSubtitle: string;
+    filterAll: string;
+    emptyTitle: string;
+    emptyDesc: string;
+    extractNow: string;
+    reExtract: string;
+    copyUrl: string;
+    copied: string;
+    deleteItem: string;
+    confirmClear: string;
+    zeroRetentionNotice: string;
+    itemsCount: string;
   };
   metrics: {
     col1: { val: string; label: string; caption: string };
@@ -221,10 +234,10 @@ export interface TranslationDictionary {
     items: {
       multiPhoto: { title: string; desc: string };
       zipBundling: { title: string; desc: string };
-      liveProgress: { title: string; desc: string };
-      zeroStorage: { title: string; desc: string };
-      noWatermarks: { title: string; desc: string };
-      directPassthrough: { title: string; desc: string };
+      audioDemux: { title: string; desc: string };
+      antiTracking: { title: string; desc: string };
+      shortlinkResolution: { title: string; desc: string };
+      masterResolution: { title: string; desc: string };
     };
   };
   activity: {

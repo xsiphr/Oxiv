@@ -15,9 +15,18 @@ interface ExtractionInputProps {
   externalError?: string | null;
   resetSignal?: number;
   externalUrl?: string;
+  onReset?: () => void;
 }
 
-export function ExtractionInput({ onExtract, isLoading, status, externalError, resetSignal, externalUrl }: ExtractionInputProps) {
+export function ExtractionInput({
+  onExtract,
+  isLoading,
+  status,
+  externalError,
+  resetSignal,
+  externalUrl,
+  onReset,
+}: ExtractionInputProps) {
   const { t } = useI18n();
   const [url, setUrl] = useState('');
   const [detectedPlatform, setDetectedPlatform] = useState<Platform>('unknown');
@@ -136,6 +145,7 @@ export function ExtractionInput({ onExtract, isLoading, status, externalError, r
     setUrl('');
     setDetectedPlatform('unknown');
     setError(null);
+    onReset?.();
     inputRef.current?.focus();
   };
 
