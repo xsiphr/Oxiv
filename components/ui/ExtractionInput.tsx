@@ -157,7 +157,7 @@ export function ExtractionInput({ onExtract, isLoading, status, externalError, r
       <div className="flex items-center justify-center mb-6 sm:mb-8 select-none">
         <Oxi
           status={status || (isLoading ? 'extracting' : 'idle')}
-          size={98}
+          size="clamp(112px, 13vw, 142px)"
           isFocused={isFocused}
           isAnticipating={isAnticipating}
           nodSignal={nodSignal}

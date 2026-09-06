@@ -6,6 +6,7 @@
 
 .scroller {
   display: flex;
+  align-items: center;
   white-space: nowrap;
   text-align: center;
   font-family: inherit;
@@ -15,5 +16,7 @@
 }
 
 .scroller span {
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
 }

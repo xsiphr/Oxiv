@@ -7,13 +7,6 @@ import { TerminalStream, StreamStepState } from '@/components/ui/TerminalStream'
 import { MediaPreview } from '@/components/media/MediaPreview';
 import { DiagnosticCard } from '@/components/ui/DiagnosticCard';
 import { RecentExtractions } from '@/components/ui/RecentExtractions';
-import { MetricsGrid } from '@/components/sections/MetricsGrid';
-import { PlatformLogoStrip } from '@/components/effects/PlatformLogoStrip';
-import { HowItWorksSection } from '@/components/sections/HowItWorksSection';
-import { SupportedPlatformsSection } from '@/components/sections/SupportedPlatformsSection';
-import { FeaturesSection } from '@/components/sections/FeaturesSection';
-import { ScrollVelocityStrip } from '@/components/effects/ScrollVelocityStrip';
-import { FAQSection } from '@/components/sections/FAQSection';
 import { Footer } from '@/components/ui/Footer';
 import { ExtractionStatus, MediaResult, Platform, ExtractionError, ApiResponse } from '@/types';
 import { detectPlatform } from '@/lib/platformRegistry';
@@ -317,9 +310,15 @@ export default function Home() {
 
       {/* 2. Main Body Content */}
       <main className="flex-1 flex flex-col w-full">
-        {/* Hero Section */}
-        <section className="w-full">
-          <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-12 sm:py-16 flex flex-col items-center justify-center">
+        {/* Hero Section (Vertically centered on desktop in idle state, top-aligned on mobile) */}
+        <section className={`w-full ${status === 'idle' ? 'flex-1 flex flex-col' : ''}`}>
+          <div
+            className={`max-w-7xl w-full mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 ${
+              status === 'idle'
+                ? 'flex-1 flex flex-col items-center justify-start md:justify-center py-10 md:py-16'
+                : 'py-10 md:py-16 flex flex-col items-center justify-center'
+            }`}
+          >
             <ExtractionInput
               onExtract={handleExtract}
               isLoading={status === 'extracting'}
@@ -375,30 +374,9 @@ export default function Home() {
             <MediaPreview media={mediaResult} onReset={handleReset} />
           </div>
         )}
-
-        {/* 5. Metrics & Performance Figures Grid (Full-width border-y) */}
-        <MetricsGrid />
-
-        {/* 6. Supported Platform Logo Loop Strip (Full-width border-b) */}
-        <PlatformLogoStrip />
-
-        {/* 7. How It Works (3 Steps) */}
-        <HowItWorksSection />
-
-        {/* 8. Supported Platforms & Formats */}
-        <SupportedPlatformsSection />
-
-        {/* 9. Standout Features & Differentiators */}
-        <FeaturesSection />
-
-        {/* 10. Scroll Velocity Marquee Strip */}
-        <ScrollVelocityStrip texts={t.ticker} />
-
-        {/* 10. Minimal Technical FAQ Accordion */}
-        <FAQSection />
       </main>
 
-      {/* 10. Footer (Full-width border-t) */}
+      {/* Footer (Full-width border-t) */}
       <Footer />
     </div>
   );

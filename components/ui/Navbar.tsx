@@ -1,61 +1,66 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Sun, Moon } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Settings, ChevronDown } from 'lucide-react';
 import { SiGithub } from 'react-icons/si';
 import { useI18n } from '@/lib/i18n';
 import { ExtractionStatus } from '@/types';
+import { MegaMenu } from './MegaMenu';
 
 export interface NavbarProps {
   status?: ExtractionStatus;
 }
 
 export function Navbar({ status: _status = 'idle' }: NavbarProps) {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('oxiv_theme') as 'dark' | 'light' | null;
-        if (saved === 'light' || saved === 'dark') return saved;
-      } catch {
-        // ignore
-      }
-    }
-    return 'dark';
-  });
-  const { toggleLocale, t } = useI18n();
+  const pathname = usePathname();
+  const { t } = useI18n();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Sync theme for logo invert filter
   useEffect(() => {
     try {
       const saved = localStorage.getItem('oxiv_theme') as 'dark' | 'light' | null;
-      // Strict default to 'dark' for any new visitor
-      const initialTheme = saved === 'light' ? 'light' : 'dark';
-      setTheme(initialTheme);
-      document.documentElement.setAttribute('data-theme', initialTheme);
-      document.cookie = `oxiv_theme=${initialTheme}; path=/; max-age=31536000; SameSite=Lax`;
+      if (saved === 'light' || saved === 'dark') {
+        setTheme(saved);
+      }
     } catch {
-      setTheme('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
+      // ignore
     }
   }, []);
 
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    document.documentElement.setAttribute('data-theme', nextTheme);
-    try {
-      localStorage.setItem('oxiv_theme', nextTheme);
-      document.cookie = `oxiv_theme=${nextTheme}; path=/; max-age=31536000; SameSite=Lax`;
-    } catch {
-      // Safe fallback if localStorage is blocked
-    }
+  // Close menus whenever pathname changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsMegaMenuOpen(false);
+  }, [pathname]);
+
+  const handleMouseEnterAbout = () => {
+    if (megaMenuTimeoutRef.current) clearTimeout(megaMenuTimeoutRef.current);
+    setIsMegaMenuOpen(true);
   };
 
+  const handleMouseLeaveAbout = () => {
+    megaMenuTimeoutRef.current = setTimeout(() => {
+      setIsMegaMenuOpen(false);
+    }, 180);
+  };
+
+  const isHomeActive = pathname === '/';
+  const isAboutActive = pathname.startsWith('/about');
+  const isSupportActive = pathname === '/support';
+
   return (
-    <header className="sticky top-0 z-50 w-full glass-header border-b border-dashed border-[var(--colors-hairline)] transition-colors duration-300">
-      <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b border-dashed border-[var(--colors-hairline)] transition-colors duration-300">
+      {/* Scoped Glass Header Backdrop for Navbar (prevents nested backdrop-filter clipping on MegaMenu) */}
+      <div className="absolute inset-0 glass-header -z-10 pointer-events-none" />
+      <div className="max-w-7xl mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-4 relative">
         {/* Brand Logo & Wordmark */}
-        <Link href="/" className="flex items-center gap-2.5 select-none group" aria-label="Oxiv">
+        <Link href="/" className="flex items-center gap-2.5 select-none group flex-shrink-0" aria-label="Oxiv">
           <img
             src="/logos/oxi.svg"
             alt="Oxi Logo"
@@ -68,43 +73,239 @@ export function Navbar({ status: _status = 'idle' }: NavbarProps) {
           </span>
         </Link>
 
-        {/* Minimal Actions (GitHub, Theme Toggle, Language Switcher) */}
-        <div className="flex items-center gap-2 sm:gap-3 text-[var(--colors-muted)]">
+        {/* ─── Desktop Clean Text Links with MegaMenu ─── */}
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8 h-full">
+          {/* Main Downloader / Home Link */}
           <Link
-            href="/activity"
-            className="hover:text-[var(--colors-ink)] transition-colors p-2 rounded-xl hover:bg-[var(--colors-surface-card)]"
-            aria-label="GitHub Activity"
+            href="/"
+            className={`font-mono text-xs sm:text-sm tracking-tight transition-colors py-1.5 relative ${
+              isHomeActive
+                ? 'text-[var(--colors-ink)] font-bold'
+                : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
+            }`}
           >
-            <SiGithub className="w-5 h-5" />
+            <span>{t.nav.downloader}</span>
+            {isHomeActive && (
+              <span className="absolute bottom-0 inset-x-0 h-0.5 bg-[var(--colors-ink)] rounded-full animate-fadeIn" />
+            )}
           </Link>
 
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="hover:text-[var(--colors-ink)] transition-colors p-2 rounded-xl hover:bg-[var(--colors-surface-card)] cursor-pointer"
-            aria-label="Toggle Theme"
+          {/* About Link with MegaMenu Hover Trigger */}
+          <div
+            className="h-full flex items-center"
+            onMouseEnter={handleMouseEnterAbout}
+            onMouseLeave={handleMouseLeaveAbout}
           >
-            {theme === 'dark' ? (
-              <Sun className="w-5 h-5" />
-            ) : (
-              <Moon className="w-5 h-5" />
-            )}
-          </button>
+            <Link
+              href="/about"
+              onClick={() => setIsMegaMenuOpen(false)}
+              className={`font-mono text-xs sm:text-sm tracking-tight transition-colors h-full inline-flex items-center gap-1.5 relative ${
+                isAboutActive
+                  ? 'text-[var(--colors-ink)] font-bold'
+                  : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
+              }`}
+            >
+              <span>{t.nav.about}</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  isMegaMenuOpen ? 'rotate-180 text-[var(--colors-ink)]' : 'text-[var(--colors-muted)]'
+                }`}
+              />
+              {isAboutActive && (
+                <span className="absolute bottom-0 inset-x-0 h-0.5 bg-[var(--colors-ink)] rounded-full animate-fadeIn" />
+              )}
+            </Link>
+          </div>
 
-          {/* Language Switcher Button (Far right without border, icon style) */}
+          {/* Support Link */}
+          <Link
+            href="/support"
+            className={`font-mono text-xs sm:text-sm tracking-tight transition-colors py-1.5 relative ${
+              isSupportActive
+                ? 'text-[var(--colors-ink)] font-bold'
+                : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
+            }`}
+          >
+            <span>{t.nav.support}</span>
+            {isSupportActive && (
+              <span className="absolute bottom-0 inset-x-0 h-0.5 bg-[var(--colors-ink)] rounded-full animate-fadeIn" />
+            )}
+          </Link>
+        </nav>
+
+        {/* ─── Desktop Icon-Only Quick Actions & Mobile Hamburger ─── */}
+        <div className="flex items-center gap-1 sm:gap-1.5 text-[var(--colors-muted)]">
+          {/* Settings Shortcut (Desktop only) */}
+          <Link
+            href="/settings"
+            className={`hidden md:flex p-2 rounded-xl transition-colors ${
+              pathname === '/settings'
+                ? 'text-[var(--colors-ink)] bg-[var(--colors-surface-card)]'
+                : 'hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-card)]'
+            }`}
+            title={t.nav.settings}
+            aria-label={t.nav.settings}
+          >
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+          </Link>
+
+          {/* GitHub Icon -> Activity & Commit Ledger (Desktop only) */}
+          <Link
+            href="/activity"
+            className={`hidden md:flex p-2 rounded-xl transition-colors ${
+              pathname === '/activity'
+                ? 'text-[var(--colors-ink)] bg-[var(--colors-surface-card)]'
+                : 'hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-card)]'
+            }`}
+            title={t.nav.activity}
+            aria-label={t.nav.activity}
+          >
+            <SiGithub className="w-4 h-4 sm:w-5 sm:h-5" />
+          </Link>
+
+          {/* Mobile Hamburger Button (< 768px) with 2-line smooth morphing animation to X (borderless) */}
           <button
             type="button"
-            onClick={toggleLocale}
-            className="hover:text-[var(--colors-ink)] transition-colors p-2 rounded-xl hover:bg-[var(--colors-surface-card)] cursor-pointer select-none flex items-center justify-center w-9 h-9"
-            aria-label="Toggle language (English / Arabic)"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden ms-1 w-9 h-9 flex items-center justify-center rounded-xl text-[var(--colors-ink)] hover:bg-[var(--colors-surface-card)] cursor-pointer focus:outline-none transition-colors"
+            aria-label={t.nav.menu}
+            aria-expanded={isMobileMenuOpen}
           >
-            <span className="font-mono text-xs font-semibold uppercase leading-none">
-              {t.nav.langToggle}
+            <span className="relative w-5 h-4 flex items-center justify-center">
+              <span
+                className={`absolute h-[2px] w-5 bg-current rounded-full transition-all duration-300 ease-in-out ${
+                  isMobileMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-[5px]'
+                }`}
+              />
+              <span
+                className={`absolute h-[2px] w-5 bg-current rounded-full transition-all duration-300 ease-in-out ${
+                  isMobileMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-[5px]'
+                }`}
+              />
             </span>
           </button>
         </div>
+
+        {/* MegaMenu Popover (Anchored directly under navbar bottom border and bounded by the guidelines) */}
+        <MegaMenu
+          isOpen={isMegaMenuOpen}
+          onClose={() => setIsMegaMenuOpen(false)}
+          onMouseEnter={handleMouseEnterAbout}
+          onMouseLeave={handleMouseLeaveAbout}
+        />
       </div>
+
+      {/* ─── Mobile Slide-Down Drawer (< 768px) with Navbar Glass Blur ─── */}
+      {isMobileMenuOpen && (
+        <div
+          className="md:hidden border-t border-dashed border-[var(--colors-hairline)] glass-header px-4 py-4 space-y-3 animate-fadeIn shadow-xl"
+          style={{
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+          }}
+        >
+          <nav className="flex flex-col space-y-1">
+            {/* Downloader Link */}
+            <Link
+              href="/"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`p-3 rounded-lg font-mono text-xs flex items-center transition-colors ${
+                pathname === '/'
+                  ? 'bg-[var(--colors-surface-elevated)] text-[var(--colors-ink)] font-bold'
+                  : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
+              }`}
+            >
+              <span>01. {t.nav.downloader}</span>
+            </Link>
+
+            {/* About Top-Level Item */}
+            <Link
+              href="/about"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`p-3 rounded-lg font-mono text-xs flex items-center transition-colors ${
+                pathname.startsWith('/about')
+                  ? 'bg-[var(--colors-surface-elevated)] text-[var(--colors-ink)] font-bold'
+                  : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
+              }`}
+            >
+              <span>02. {t.nav.about}</span>
+            </Link>
+
+            {/* About Sub-sections (Indented sub-links) */}
+            <div className="ps-4 pe-1 py-1 space-y-1 border-s border-dashed border-[var(--colors-hairline)] ms-3 my-1">
+              <Link
+                href="/about"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block py-1.5 px-2.5 rounded font-mono text-[11px] transition-colors ${
+                  pathname === '/about'
+                    ? 'text-[var(--colors-ink)] font-bold bg-[var(--colors-surface-elevated)]'
+                    : 'text-[var(--colors-muted)] hover:text-[var(--colors-ink)]'
+                }`}
+              >
+                ↳ {t.about.navPhilosophy}
+              </Link>
+              <Link
+                href="/about/platforms"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block py-1.5 px-2.5 rounded font-mono text-[11px] transition-colors ${
+                  pathname === '/about/platforms'
+                    ? 'text-[var(--colors-ink)] font-bold bg-[var(--colors-surface-elevated)]'
+                    : 'text-[var(--colors-muted)] hover:text-[var(--colors-ink)]'
+                }`}
+              >
+                ↳ {t.about.navPlatforms}
+              </Link>
+              <Link
+                href="/about/faq"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block py-1.5 px-2.5 rounded font-mono text-[11px] transition-colors ${
+                  pathname === '/about/faq'
+                    ? 'text-[var(--colors-ink)] font-bold bg-[var(--colors-surface-elevated)]'
+                    : 'text-[var(--colors-muted)] hover:text-[var(--colors-ink)]'
+                }`}
+              >
+                ↳ {t.about.navFaq}
+              </Link>
+            </div>
+
+            {/* Support Link */}
+            <Link
+              href="/support"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`p-3 rounded-lg font-mono text-xs flex items-center transition-colors ${
+                pathname === '/support'
+                  ? 'bg-[var(--colors-surface-elevated)] text-[var(--colors-ink)] font-bold'
+                  : 'text-[var(--colors-body)] hover:text-[var(--colors-ink)]'
+              }`}
+            >
+              <span>03. {t.nav.support}</span>
+            </Link>
+          </nav>
+
+          {/* Quick Actions Row in Mobile Drawer */}
+          <div className="pt-3 border-t border-dashed border-[var(--colors-hairline)] flex items-center justify-around text-[var(--colors-muted)]">
+            <Link
+              href="/settings"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 rounded-lg hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-elevated)] transition-colors flex items-center gap-1.5 font-mono text-xs"
+            >
+              <Settings className="w-4 h-4" />
+              <span>{t.nav.settings}</span>
+            </Link>
+
+            <Link
+              href="/activity"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 rounded-lg hover:text-[var(--colors-ink)] hover:bg-[var(--colors-surface-elevated)] transition-colors flex items-center gap-1.5 font-mono text-xs"
+            >
+              <SiGithub className="w-4 h-4" />
+              <span>{t.nav.activity}</span>
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
+
+export default Navbar;

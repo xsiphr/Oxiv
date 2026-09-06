@@ -5,6 +5,96 @@ export interface TranslationDictionary {
     status: string;
     github: string;
     langToggle: string;
+    downloader: string;
+    about: string;
+    platforms: string;
+    faq: string;
+    activity: string;
+    support: string;
+    settings: string;
+    menu: string;
+    close: string;
+    back: string;
+  };
+  megaMenu: {
+    bannerTitle: string;
+    philosophyTitle: string;
+    platformsTitle: string;
+    faqTitle: string;
+    viewAllAbout: string;
+    itemPhilosophyProtocol: string;
+    itemPhilosophyArchitecture: string;
+    itemPhilosophyPrivacy: string;
+    itemPlatformsSupported: string;
+    itemPlatformsFormats: string;
+    itemFaqPrivacy: string;
+    itemFaqHowItWorks: string;
+  };
+  about: {
+    title: string;
+    subtitle: string;
+    navPhilosophy: string;
+    navPlatforms: string;
+    navFaq: string;
+    missionTitle: string;
+    missionLead: string;
+    missionP1: string;
+    missionP2: string;
+    guaranteeLosslessTitle: string;
+    guaranteeLosslessDesc: string;
+    guaranteeCleanTitle: string;
+    guaranteeCleanDesc: string;
+    guaranteeZeroRetentionTitle: string;
+    guaranteeZeroRetentionDesc: string;
+    architectureSectionTitle: string;
+    architectureSectionSubtitle: string;
+    privacyTitle: string;
+    privacyDesc: string;
+    licenseTitle: string;
+    licenseDesc: string;
+    licenseLink: string;
+    faqGroupPrivacy: string;
+    faqGroupHowItWorks: string;
+  };
+  settings: {
+    title: string;
+    subtitle: string;
+    appearanceTitle: string;
+    appearanceDesc: string;
+    themeLabel: string;
+    themeDark: string;
+    themeLight: string;
+    languageLabel: string;
+    languageEn: string;
+    languageAr: string;
+    systemSectionTitle: string;
+    systemSectionDesc: string;
+    storageTitle: string;
+    storageDesc: string;
+    storageClearBtn: string;
+    storageCleared: string;
+    storageZeroRetention: string;
+  };
+  support: {
+    title: string;
+    subtitle: string;
+    coffeeBtn: string;
+    coffeeDesc: string;
+    communityTitle: string;
+    communitySubtitle: string;
+    starGithubTitle: string;
+    starGithubDesc: string;
+    starGithubBtn: string;
+    shareTitle: string;
+    shareDesc: string;
+    shareBtn: string;
+    shareCopied: string;
+    issueTitle: string;
+    issueDesc: string;
+    issueBtn: string;
+    featureTitle: string;
+    featureDesc: string;
+    featureBtn: string;
   };
   hero: {
     brand: string;
@@ -81,13 +171,6 @@ export interface TranslationDictionary {
     col2: { val: string; label: string; caption: string };
     col3: { val: string; label: string; caption: string };
   };
-  howItWorks: {
-    title: string;
-    subtitle: string;
-    step1: { num: string; title: string; desc: string };
-    step2: { num: string; title: string; desc: string };
-    step3: { num: string; title: string; desc: string };
-  };
   faq: {
     title: string;
     subtitle: string;
@@ -135,9 +218,6 @@ export interface TranslationDictionary {
     };
   };
   features: {
-    eyebrow: string;
-    title: string;
-    subtitle: string;
     items: {
       multiPhoto: { title: string; desc: string };
       zipBundling: { title: string; desc: string };
@@ -174,6 +254,7 @@ export interface TranslationDictionary {
     architecture: string;
     github: string;
     support: string;
+    viewSource: string;
   };
   ticker: string[];
 }

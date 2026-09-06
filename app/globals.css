@@ -139,14 +139,6 @@ body {
   background-color: rgba(248, 248, 251, 0.85);
 }
 
-/* Custom gridline utilities */
-.monochrome-grid-bg {
-  background-size: 24px 24px;
-  background-image: 
-    linear-gradient(to right, var(--colors-hairline) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--colors-hairline) 1px, transparent 1px);
-}
-
 /* Smooth fade in animation */
 @keyframes fadeIn {
   from {
