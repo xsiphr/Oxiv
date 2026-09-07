@@ -273,7 +273,7 @@ export const ar: TranslationDictionary = {
       },
       facebook: {
         name: 'فيسبوك',
-        formats: 'قريباً',
+        formats: 'فيديو ومقاطع Reels بدقة HD/SD، صوت M4A منفصل، صور أصلية بدقة 2048px، ألبومات صور + ZIP',
       },
       instagram: {
         name: 'إنستغرام',

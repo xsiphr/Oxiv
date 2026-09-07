@@ -45,7 +45,7 @@ export const PLATFORM_REGISTRY: PlatformEntry[] = [
     name: 'Facebook',
     domains: ['facebook.com', 'fb.watch', 'fb.com', 'm.facebook.com', 'web.facebook.com'],
     status: 'live',
-    formats: 'HD/SD Progressive MP4, Isolated Soundtrack, Master Photo, Album ZIP',
+    formats: 'HD/SD MP4 video & reels, M4A audio, 2048px master photos, multi-photo albums + ZIP',
   },
 
   // ─── 2. Next Up (In Active Pipeline Build) ───

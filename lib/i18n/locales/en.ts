@@ -261,7 +261,7 @@ export const en: TranslationDictionary = {
       },
       facebook: {
         name: 'Facebook',
-        formats: 'Coming next',
+        formats: 'HD/SD MP4 video & reels, M4A audio, 2048px master photos, multi-photo albums + ZIP',
       },
       instagram: {
         name: 'Instagram',
