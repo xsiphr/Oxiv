@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/logos/oxi-dark-mode.gif">
     <source media="(prefers-color-scheme: light)" srcset="public/logos/oxi-light-mode.gif">
-    <img alt="Oxiv Mascot" src="public/logos/oxi.gif" width="170" height="170">
+    <img alt="Oxiv Mascot" src="public/logos/oxi.gif" width="160" height="160">
   </picture>
 </p>
 
