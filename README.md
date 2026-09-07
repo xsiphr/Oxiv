@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="public/logos/oxi.svg">
-    <source media="(prefers-color-scheme: light)" srcset="public/logos/oxi-dark.svg">
-    <img alt="Oxiv Logo" src="public/logos/oxi-tab.svg" width="170" height="170">
+    <source media="(prefers-color-scheme: dark)" srcset="public/logos/oxi-dark-mode.gif">
+    <source media="(prefers-color-scheme: light)" srcset="public/logos/oxi-light-mode.gif">
+    <img alt="Oxiv Mascot" src="public/logos/oxi.gif" width="170" height="170">
   </picture>
 </p>
 
