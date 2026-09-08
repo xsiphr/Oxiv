@@ -160,6 +160,8 @@ export const ar: TranslationDictionary = {
     saving: 'حفظ...',
     directStream: 'تدفق مباشر',
     notice: 'ℹ تتم معالجة التدفقات لحظياً دون تخزين أي ملفات على الخوادم. خالية تماماً من طبقات التتبع.',
+    quotedMediaNote: 'وسائط من المنشور المقتبس',
+    gifFormatBadge: 'صورة متحركة GIF (MP4)',
   },
   recents: {
     title: 'السجل والعمليات الأخيرة',
@@ -281,7 +283,7 @@ export const ar: TranslationDictionary = {
       },
       x: {
         name: 'إكس',
-        formats: 'فيديو AVC1 MP4، صور متحركة Lossless GIF، مقاطع صوتية',
+        formats: 'فيديو MP4 عالي/عادي الدقة، صور أصلية بدقة الماستر، صور متحركة GIF وحزم ZIP',
       },
       youtube: {
         name: 'يوتيوب',

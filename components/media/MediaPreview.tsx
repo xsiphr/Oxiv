@@ -708,6 +708,14 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                   )}
                 </div>
 
+                {/* Quoted Media Source Transparency Indicator */}
+                {media.mediaSource === 'quoted' && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] text-[var(--colors-muted)] select-none">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span>{t.preview.quotedMediaNote}</span>
+                  </div>
+                )}
+
                 {/* Clean Decoded Title & Description */}
                 <p className="font-body text-xs sm:text-sm text-[var(--colors-body)] leading-relaxed pt-1 whitespace-pre-line">
                   {media.title || media.description}

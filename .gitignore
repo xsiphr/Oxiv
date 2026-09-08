@@ -54,3 +54,12 @@ TODO.md
 FACEBOOK_RESEARCH.md
 /prompts/
 /scratch/
+
+# --- Test scripts & harnesses (never publish these) ---
+test_*.ts
+test_*.js
+test-*.ts
+test-*.js
+test_x.ts
+*.test.ts
+*.test.js

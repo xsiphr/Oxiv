@@ -160,6 +160,8 @@ export const en: TranslationDictionary = {
     saving: 'Saving…',
     directStream: 'Direct uncompressed stream',
     notice: 'Direct client-side stream. Files are never stored or logged on intermediary servers.',
+    quotedMediaNote: 'Media from quoted post',
+    gifFormatBadge: 'Looping GIF (MP4)',
   },
   recents: {
     title: 'Recent Extractions',
@@ -269,7 +271,7 @@ export const en: TranslationDictionary = {
       },
       x: {
         name: 'X',
-        formats: 'AVC1 MP4, Lossless GIF, Audio',
+        formats: 'HD/SD MP4 video, original master photos, animated GIFs + ZIP',
       },
       youtube: {
         name: 'YouTube',

@@ -49,6 +49,7 @@ export interface MediaResult {
     likes?: string;
     shares?: string;
   };
+  mediaSource?: 'direct' | 'quoted';
 }
 
 export type ExtractionStatus = 'idle' | 'extracting' | 'success' | 'error';

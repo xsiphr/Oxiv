@@ -3,6 +3,7 @@ import { lookupPlatform, LookupResult } from '@/lib/platformRegistry';
 import { extractTikTok } from '@/lib/extractors/tiktok';
 import { extractPinterest } from '@/lib/extractors/pinterest';
 import { extractFacebook } from '@/lib/extractors/facebook';
+import { extractX } from '@/lib/extractors/x';
 import { ExtractionPipelineError } from '@/lib/extractors/errors';
 import { ApiResponse, MediaResult } from '@/types';
 
@@ -50,7 +51,7 @@ async function handleExtraction(url: string, lookup: LookupResult): Promise<Next
         error: {
           code: 'PIPELINE_PENDING',
           message: `${lookup.platform.name} support is in active deployment.`,
-          technicalDetail: `Live extraction is operational for TikTok, Pinterest, and Facebook. ${lookup.platform.name} pipeline is queued.`,
+          technicalDetail: `Live extraction is operational for TikTok, Pinterest, Facebook, and X. ${lookup.platform.name} pipeline is queued.`,
           platform: lookup.platform.id,
           platformName: lookup.platform.name,
           statusHint: 503,
@@ -70,6 +71,8 @@ async function handleExtraction(url: string, lookup: LookupResult): Promise<Next
         mediaResult = await extractPinterest(url);
       } else if (lookup.platform.id === 'facebook') {
         mediaResult = await extractFacebook(url);
+      } else if (lookup.platform.id === 'x') {
+        mediaResult = await extractX(url);
       } else {
         throw new Error(`Unsupported live platform: ${lookup.platform.id}`);
       }
@@ -202,8 +205,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       status: 'active',
       service: 'Oxiv Media Extraction Engine',
-      supportedLive: ['tiktok', 'pinterest', 'facebook'],
-      pipelinePending: ['instagram', 'x', 'youtube'],
+      supportedLive: ['tiktok', 'pinterest', 'facebook', 'x'],
+      pipelinePending: ['instagram', 'youtube'],
       usage: 'POST /api/extract with { url } or GET /api/extract?url=...',
     });
   }

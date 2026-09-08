@@ -160,6 +160,8 @@ export interface TranslationDictionary {
     saving: string;
     directStream: string;
     notice: string;
+    quotedMediaNote: string;
+    gifFormatBadge: string;
   };
   recents: {
     title: string;

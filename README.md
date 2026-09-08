@@ -26,7 +26,7 @@
 
 ## Overview
 
-Oxiv is an open-source, stateless media parser and direct streaming downloader built for modern social platforms (TikTok, Pinterest, and Facebook).
+Oxiv is an open-source, stateless media parser and direct streaming downloader built for modern social platforms (TikTok, Pinterest, Facebook, and X).
 
 Unlike conventional web downloaders, Oxiv operates without user accounts, server-side media retention, tracking cookies, or heavy browser automation frameworks. URLs are demuxed via public SSR hydration traversals and piped directly to the client browser in pristine, unaltered quality.
 
@@ -49,8 +49,8 @@ Unlike conventional web downloaders, Oxiv operates without user accounts, server
 | TikTok | Live | Watermark-free MP4, Photo Slideshows, 128kbps MP3 Audio | `lib/extractors/tiktok.ts` |
 | Pinterest | Live | Original High-Res Images, 1080p MP4 Video | `lib/extractors/pinterest.ts` |
 | Facebook | Live | Reels, Watch Videos, Multi-Photo PCB Posts, Full Albums, M4A Audio | `lib/extractors/facebook.ts` |
+| X (Twitter) | Live | Progressive MP4 Ladder (1080p-360p), Orig Photos, Looping GIFs, Quoted Fallback | `lib/extractors/x.ts` |
 | Instagram | Planned | Posts, Reels, Stories, Carousels | Pipeline Pending |
-| X (Twitter) | Planned | Video Clips, Multi-Image Posts | Pipeline Pending |
 | YouTube | Planned | Shorts, Video Streams, Audio Demuxing | Pipeline Pending |
 
 ---
@@ -129,7 +129,8 @@ Oxiv/
 │   ├── extractors/
 │   │   ├── facebook.ts            # Facebook Comet desktop SSR hydration parser
 │   │   ├── pinterest.ts           # Pinterest high-res pin & video extractor
-│   │   └── tiktok.ts              # TikTok video, slideshow & MP3 extractor
+│   │   ├── tiktok.ts              # TikTok video, slideshow & MP3 extractor
+│   │   └── x.ts                   # X (Twitter) syndication MP4 ladder, master photos & GIF extractor
 │   ├── i18n/                      # Bilingual dictionaries (English & Arabic)
 │   ├── platformRegistry.ts        # Platform matching & URL routing tier logic
 │   ├── scroll.ts                  # Viewport cubic easing auto-scroll engine

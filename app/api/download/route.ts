@@ -22,6 +22,8 @@ async function fetchMediaStream(targetUrl: string): Promise<Response | null> {
       referer = 'https://www.pinterest.com/';
     } else if (targetUrl.includes('facebook.com') || targetUrl.includes('fbcdn.net')) {
       referer = 'https://www.facebook.com/';
+    } else if (targetUrl.includes('twimg.com') || targetUrl.includes('twitter.com') || targetUrl.includes('x.com')) {
+      referer = 'https://x.com/';
     }
     const res2 = await fetch(targetUrl, {
       headers: {
@@ -168,6 +170,8 @@ export async function POST(request: NextRequest) {
         referer = 'https://www.pinterest.com/';
       } else if (item.url.includes('facebook.com') || item.url.includes('fbcdn.net')) {
         referer = 'https://www.facebook.com/';
+      } else if (item.url.includes('twimg.com') || item.url.includes('twitter.com') || item.url.includes('x.com')) {
+        referer = 'https://x.com/';
       }
 
       try {
