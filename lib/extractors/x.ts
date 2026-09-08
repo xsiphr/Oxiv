@@ -341,14 +341,16 @@ export async function extractX(inputUrl: string): Promise<MediaResult> {
       });
     }
 
-    // Try to get real byte size for primary (top) video stream
-    const topVariant = mp4Variants[0];
-    const topSizeBytes = await getRealContentLength(topVariant.url);
+    // Resolve real byte sizes for all video stream variants in parallel via HEAD requests
+    const variantSizes = await Promise.all(
+      mp4Variants.map((v) => getRealContentLength(v.url))
+    );
 
     for (let i = 0; i < mp4Variants.length; i++) {
       const variant = mp4Variants[i];
       const resFromUrl = extractResolutionFromUrl(variant.url) || dimensions;
       const isTop = i === 0;
+      const isLast = i === mp4Variants.length - 1;
 
       let quality = 'SD';
       let label = isGif ? 'Looping GIF (MP4)' : 'Video (MP4)';
@@ -359,22 +361,27 @@ export async function extractX(inputUrl: string): Promise<MediaResult> {
       } else if (isTop) {
         quality = resFromUrl && parseInt(resFromUrl.split('x')[1] || '0', 10) >= 1080 ? 'HD 1080p' : 'HD Master';
         label = resFromUrl ? `HD Video (${resFromUrl})` : 'High Definition (MP4)';
-      } else if (i === mp4Variants.length - 1) {
+      } else if (isLast) {
         quality = 'Mobile / SD';
         label = resFromUrl ? `SD Video (${resFromUrl})` : 'Standard Definition (MP4)';
       } else {
         quality = 'Medium';
-        label = resFromUrl ? `Video (${resFromUrl})` : 'Medium Quality (MP4)';
+        label = resFromUrl ? `Medium Video (${resFromUrl})` : 'Medium Quality (MP4)';
       }
 
-      const variantSize = isTop ? formatBytes(topSizeBytes) : 'Direct Stream';
-      const id = isGif
-        ? `x-gif-${i + 1}`
-        : isTop
-          ? 'x-video-hd'
-          : i === mp4Variants.length - 1
-            ? 'x-video-sd'
-            : `x-video-${i + 1}`;
+      const sizeBytes = variantSizes[i] || 0;
+      const variantSize = sizeBytes > 0 ? formatBytes(sizeBytes) : 'Direct Stream';
+
+      let id: string;
+      if (isGif) {
+        id = `x-gif-${i + 1}`;
+      } else if (isTop) {
+        id = 'x-video-hd';
+      } else if (isLast) {
+        id = 'x-video-sd';
+      } else {
+        id = mp4Variants.length === 3 ? 'x-video-medium' : `x-video-medium-${i}`;
+      }
 
       formats.push({
         id,

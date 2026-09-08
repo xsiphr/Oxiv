@@ -395,11 +395,17 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
           f.id.includes('-hd') ||
           f.quality?.toLowerCase().includes('hd') ||
           f.label.toLowerCase().includes('(hd)');
+        const isMedium =
+          f.id.includes('-medium') ||
+          f.id.includes('-md') ||
+          f.quality?.toLowerCase().includes('medium') ||
+          f.label.toLowerCase().includes('medium');
         const isSd =
           f.id.includes('-sd') ||
           f.quality?.toLowerCase().includes('sd') ||
           f.label.toLowerCase().includes('(sd)');
         if (isHd) suffix = 'video-hd';
+        else if (isMedium) suffix = 'video-medium';
         else if (isSd) suffix = 'video-sd';
         else suffix = `video-track-${idx + 1}`;
       }
@@ -416,7 +422,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
     executeZipDownload(items, filename, buttonId);
   };
 
-  // Standard stream download handler with explicit quality naming (HD vs SD)
+  // Standard stream download handler with explicit quality naming (HD vs SD vs Medium)
   const handleDownload = (format: MediaFormat) => {
     if (format.type === 'archive' || format.downloadUrl === '#zip') {
       handleDownloadFullAlbumZip();
@@ -434,11 +440,17 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
         format.id.includes('-hd') ||
         format.quality?.toLowerCase().includes('hd') ||
         format.label.toLowerCase().includes('(hd)');
+      const isMedium =
+        format.id.includes('-medium') ||
+        format.id.includes('-md') ||
+        format.quality?.toLowerCase().includes('medium') ||
+        format.label.toLowerCase().includes('medium');
       const isSd =
         format.id.includes('-sd') ||
         format.quality?.toLowerCase().includes('sd') ||
         format.label.toLowerCase().includes('(sd)');
       if (isHd) suffix = 'video-hd';
+      else if (isMedium) suffix = 'video-medium';
       else if (isSd) suffix = 'video-sd';
       else suffix = 'video';
     }
@@ -1008,9 +1020,71 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                       );
                     })}
 
-                    {/* Dashed Horizontal Divider + Video ZIP Bundling Cards */}
                     {/* Dashed Horizontal Divider + Video ZIP Bundling Card */}
-                    {hasMultiQualityVideo ? (
+                    {media.platform === 'x' && videoFormats.length >= 2 ? (
+                      <>
+                        <div className="border-t border-dashed border-[var(--colors-hairline)] my-1" />
+
+                        <div className="p-3.5 rounded-xl border bg-[var(--colors-surface-card)] border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group shadow-xs outline-none">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <Archive className="w-3.5 h-3.5 text-[var(--colors-muted)] group-hover:text-[var(--colors-ink)] transition-colors" />
+                              <span className="font-body text-xs sm:text-sm font-semibold text-[var(--colors-ink)]">
+                                {t.preview.downloadAllZipCard}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-[var(--colors-muted)]">
+                              <span className="px-1.5 py-0.5 rounded bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] text-[var(--colors-body)] font-semibold">
+                                ZIP
+                              </span>
+                              <span>
+                                {t.preview.xVideoZipDesc(videoFormats.length)}
+                              </span>
+                            </div>
+                            <p className="font-body text-[11px] text-[var(--colors-muted)] leading-tight pt-0.5">
+                              {t.preview.zipHint}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                            {(() => {
+                              const cardState = cardStates['video-bundle-zip'];
+                              const isLoading = cardState?.status === 'loading';
+                              const isSaved = cardState?.status === 'saved';
+
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadVideoBundle('all')}
+                                  disabled={isLoading}
+                                  className="px-3.5 py-1.5 rounded-lg font-body font-semibold text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-75 min-w-[125px] active:scale-95 bg-[var(--colors-ink)] text-[var(--colors-canvas)] hover:opacity-90 outline-none focus-visible:ring-1 focus-visible:ring-[var(--colors-ink)]"
+                                >
+                                  {isLoading ? (
+                                    <>
+                                      <span className="inline-block w-3 h-3 border-2 border-[var(--colors-canvas)] border-t-transparent rounded-full animate-spin shrink-0" />
+                                      <span className="font-mono text-[11px] sm:text-xs">
+                                        {cardState?.progress?.displayText || t.preview.packaging}
+                                      </span>
+                                    </>
+                                  ) : isSaved ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                      <span>{t.preview.saved}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Archive className="w-3.5 h-3.5" />
+                                      <span>{t.preview.downloadAllZip}</span>
+                                    </>
+                                  )}
+                                </button>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      </>
+                    ) : hasMultiQualityVideo ? (
                       <>
                         <div className="border-t border-dashed border-[var(--colors-hairline)] my-1" />
 

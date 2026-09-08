@@ -132,6 +132,7 @@ export interface TranslationDictionary {
     videoSdZipDesc: string;
     videoEverythingZipCard: string;
     videoEverythingZipDesc: string;
+    xVideoZipDesc: (count: number) => string;
     everythingZipCard: string;
     everythingZipDesc: string;
     selectPhotos: string;

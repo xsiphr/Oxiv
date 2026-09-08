@@ -132,6 +132,10 @@ export const en: TranslationDictionary = {
     videoSdZipDesc: 'SD video + isolated soundtrack bundled',
     videoEverythingZipCard: 'Everything (ZIP)',
     videoEverythingZipDesc: 'HD + SD video + isolated soundtrack all together',
+    xVideoZipDesc: (count: number) =>
+      count === 3
+        ? 'All 3 video qualities (HD, Medium, SD) bundled together'
+        : `All ${count} video qualities bundled together`,
     everythingZipCard: 'Everything (ZIP)',
     everythingZipDesc: 'All photos + audio bundled together',
     selectPhotos: 'Select Photos',

@@ -132,6 +132,10 @@ export const ar: TranslationDictionary = {
     videoSdZipDesc: 'تجميع فيديو SD مع المسار الصوتي',
     videoEverythingZipCard: 'الكل معاً (ZIP)',
     videoEverythingZipDesc: 'تجميع فيديوهات HD و SD مع المسار الصوتي',
+    xVideoZipDesc: (count: number) =>
+      count === 3
+        ? 'تجميع جودات الفيديو الـ 3 (HD و Medium و SD) معاً في ملف واحد'
+        : `تجميع كافة جودات الفيديو (${count} ملفات) معاً في ملف واحد`,
     everythingZipCard: 'الكل مع الصوت (ZIP)',
     everythingZipDesc: 'تجميع جميع الصور والمسار الصوتي في ملف واحد',
     selectPhotos: 'تحديد الصور',
