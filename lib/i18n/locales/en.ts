@@ -96,6 +96,19 @@ export const en: TranslationDictionary = {
     featureTitle: 'Request a Platform',
     featureDesc: 'Suggest a new social media platform or enhancement to the pipeline.',
     featureBtn: 'Feature Request',
+    quickSupportTitle: 'Quick Support',
+    quickSupportSubtitle: 'Pick a contribution amount to fuel infrastructure and development',
+    oneTimeBadge: 'One-time support',
+    amountPresets: {
+      coffee: 'Cup of coffee',
+      lunch: 'Hearty lunch',
+      server: 'Server fuel',
+      custom: 'Custom',
+    },
+    customPlaceholder: 'Custom amount ($)',
+    supportBtn: (amount: number | string) => `Support $${amount}`,
+    supportBtnDefault: 'Support',
+    disclosure: "You'll complete your support securely on Buy Me a Coffee",
   },
   hero: {
     brand: 'Oxiv',
@@ -245,6 +258,13 @@ export const en: TranslationDictionary = {
           'Unlike single-file streams that trigger an immediate browser save dialog, archive bundles (such as combining video with audio, or packaging multi-photo albums) must first fetch each individual stream into your browser’s memory. Once all assets are collected, Oxiv packages them client-side into an uncompressed ZIP container via fflate before triggering the final file save. This staged sequence (fetching each file, compressing, then saving) reflects active, real-time work happening entirely inside your browser runtime. Total duration scales naturally with the number and size of items, and zero media data is ever retained or stored on any intermediary server.',
         technicalNote:
           'Client-side in-memory aggregation via ReadableStream chunks and zero-compression fflate assembly.',
+      },
+      {
+        id: 'faq-8',
+        question: 'Does Oxiv track or store any of my data?',
+        answer:
+          'Oxiv uses privacy-friendly, cookie-less Web Analytics to understand aggregate site traffic (visits, pages, approximate region) — no personal identifiers, fingerprinting, or cookies are involved. This is separate from the extraction pipeline: no extraction URLs, submitted links, IP addresses, or downloaded media are ever logged or stored on our servers. Extraction stays fully stateless as described in our architecture.',
+        technicalNote: 'Anonymous aggregate telemetry for general site traffic only; zero logs on extraction pipeline.',
       },
     ],
   },

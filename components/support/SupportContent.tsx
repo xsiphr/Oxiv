@@ -5,7 +5,6 @@ import {
   Check,
   Copy,
   ExternalLink,
-  Coffee,
   Star,
   Share2,
   Bug,
@@ -14,6 +13,7 @@ import {
 import { Navbar } from '@/components/ui/Navbar';
 import { Footer } from '@/components/ui/Footer';
 import { Oxi } from '@/components/ui/Oxi';
+import { QuickSupportCard } from './QuickSupportCard';
 import { useI18n } from '@/lib/i18n';
 
 export function SupportContent() {
@@ -45,10 +45,10 @@ export function SupportContent() {
       <main className="flex-1 flex flex-col w-full">
         <section className="w-full flex-1 flex flex-col">
           <div className="max-w-7xl w-full mx-auto border-x border-dashed border-[var(--colors-hairline)] px-4 sm:px-6 lg:px-8 py-10 sm:py-14 flex-1 flex flex-col space-y-10 sm:space-y-14">
-            {/* Top Hero: Oxi Mascot (Left) & Compact Buy Me a Coffee Card (Right) */}
-            <div className="max-w-3xl mx-auto w-full flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
-              {/* Oxi Mascot (Large & Free-standing like in Hero with Anticipation on hover) */}
-              <div className="flex-shrink-0 flex items-center justify-center select-none py-2">
+            {/* Top Hero: Oxi Mascot (Centered Top) & Native Quick Support Section (Below) */}
+            <div className="max-w-xl mx-auto w-full flex flex-col items-center justify-center space-y-6 sm:space-y-8">
+              {/* Oxi Mascot (Free-standing centered with Anticipation on hover) */}
+              <div className="flex items-center justify-center select-none">
                 <Oxi
                   status="idle"
                   size="clamp(115px, 14vw, 140px)"
@@ -57,34 +57,11 @@ export function SupportContent() {
                 />
               </div>
 
-              {/* Compact Buy Me a Coffee Card */}
-              <div className="flex-1 w-full sm:max-w-md p-5 sm:p-6 rounded-xl bg-[var(--colors-surface-card)] border border-[var(--colors-hairline)] shadow-xs space-y-4 text-center sm:text-start">
-                <div className="space-y-1.5">
-                  <h1 className="font-display text-xl sm:text-2xl font-bold text-[var(--colors-ink)] flex items-center gap-2 justify-center sm:justify-start">
-                    <Coffee className="w-5 h-5 text-[var(--colors-ink)] shrink-0" />
-                    <span>{t.support.coffeeBtn}</span>
-                  </h1>
-                  <p className="font-body text-xs sm:text-sm text-[var(--colors-body)] leading-relaxed">
-                    {t.support.coffeeDesc}
-                  </p>
-                </div>
-
-                <div className="pt-1 flex justify-center sm:justify-start">
-                  <a
-                    href="https://buymeacoffee.com/xsiphr"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onMouseEnter={() => setIsAnticipating(true)}
-                    onMouseLeave={() => setIsAnticipating(false)}
-                    onFocus={() => setIsAnticipating(true)}
-                    onBlur={() => setIsAnticipating(false)}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--colors-ink)] text-[var(--colors-canvas)] font-semibold text-xs sm:text-sm shadow-xs hover:opacity-90 active:scale-95 transition-all w-full sm:w-auto cursor-pointer"
-                  >
-                    <span>{t.support.coffeeBtn}</span>
-                    <ExternalLink className="w-3.5 h-3.5 rtl:rotate-180" />
-                  </a>
-                </div>
-              </div>
+              {/* Native-Styled Clean & Minimal Quick Support Section */}
+              <QuickSupportCard
+                onHoverStart={() => setIsAnticipating(true)}
+                onHoverEnd={() => setIsAnticipating(false)}
+              />
             </div>
 
             {/* Seamless Edge-to-Edge Gridline Divider */}

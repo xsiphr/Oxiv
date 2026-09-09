@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { Analytics } from "@vercel/analytics/next";
 import { I18nProvider } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n/types";
 import "./globals.css";
@@ -59,6 +60,7 @@ export default async function RootLayout({
         className="bg-[var(--colors-canvas)] text-[var(--colors-ink)] font-body antialiased selection:bg-[var(--colors-ink)] selection:text-[var(--colors-canvas)]"
       >
         <I18nProvider initialLocale={initialLocale}>{children}</I18nProvider>
+        <Analytics />
       </body>
     </html>
   );

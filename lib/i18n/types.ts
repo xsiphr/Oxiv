@@ -96,6 +96,19 @@ export interface TranslationDictionary {
     featureTitle: string;
     featureDesc: string;
     featureBtn: string;
+    quickSupportTitle: string;
+    quickSupportSubtitle: string;
+    oneTimeBadge: string;
+    amountPresets: {
+      coffee: string;
+      lunch: string;
+      server: string;
+      custom: string;
+    };
+    customPlaceholder: string;
+    supportBtn: (amount: number | string) => string;
+    supportBtnDefault: string;
+    disclosure: string;
   };
   hero: {
     brand: string;
