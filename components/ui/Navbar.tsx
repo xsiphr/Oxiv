@@ -11,9 +11,15 @@ import { MegaMenu } from './MegaMenu';
 
 export interface NavbarProps {
   status?: ExtractionStatus;
+  onSupportHoverStart?: () => void;
+  onSupportHoverEnd?: () => void;
 }
 
-export function Navbar({ status: _status = 'idle' }: NavbarProps) {
+export function Navbar({
+  status: _status = 'idle',
+  onSupportHoverStart,
+  onSupportHoverEnd,
+}: NavbarProps) {
   const pathname = usePathname();
   const { t } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -136,6 +142,10 @@ export function Navbar({ status: _status = 'idle' }: NavbarProps) {
           {/* Support Link */}
           <Link
             href="/support"
+            onMouseEnter={onSupportHoverStart}
+            onMouseLeave={onSupportHoverEnd}
+            onFocus={onSupportHoverStart}
+            onBlur={onSupportHoverEnd}
             className={`font-mono text-xs sm:text-sm tracking-tight transition-colors py-1.5 relative ${
               isSupportActive
                 ? 'text-[var(--colors-ink)] font-bold'
@@ -301,6 +311,10 @@ export function Navbar({ status: _status = 'idle' }: NavbarProps) {
             <Link
               href="/support"
               onClick={() => setIsMobileMenuOpen(false)}
+              onMouseEnter={onSupportHoverStart}
+              onMouseLeave={onSupportHoverEnd}
+              onFocus={onSupportHoverStart}
+              onBlur={onSupportHoverEnd}
               className={`p-3 rounded-lg font-mono text-xs flex items-center transition-colors ${
                 pathname === '/support'
                   ? 'bg-[var(--colors-surface-elevated)] text-[var(--colors-ink)] font-bold'

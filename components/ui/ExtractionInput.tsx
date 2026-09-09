@@ -16,6 +16,7 @@ interface ExtractionInputProps {
   resetSignal?: number;
   externalUrl?: string;
   onReset?: () => void;
+  externalAnticipating?: boolean;
 }
 
 export function ExtractionInput({
@@ -26,6 +27,7 @@ export function ExtractionInput({
   resetSignal,
   externalUrl,
   onReset,
+  externalAnticipating = false,
 }: ExtractionInputProps) {
   const { t } = useI18n();
   const [url, setUrl] = useState('');
@@ -169,7 +171,7 @@ export function ExtractionInput({
           status={status || (isLoading ? 'extracting' : 'idle')}
           size="clamp(112px, 13vw, 142px)"
           isFocused={isFocused}
-          isAnticipating={isAnticipating}
+          isAnticipating={isAnticipating || externalAnticipating}
           nodSignal={nodSignal}
           className="shrink-0"
         />

@@ -62,6 +62,7 @@ export default function Home() {
   const [mediaResult, setMediaResult] = useState<MediaResult | null>(null);
   const [extractionError, setExtractionError] = useState<ExtractionError | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
+  const [isSupportHovered, setIsSupportHovered] = useState(false);
 
   const terminalRef = React.useRef<HTMLDivElement>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
@@ -323,7 +324,11 @@ export default function Home() {
   return (
     <div className="w-full min-h-screen flex flex-col bg-[var(--colors-canvas)] transition-colors overflow-x-clip">
       {/* 1. Header Navbar (Full-width border-b) */}
-      <Navbar status={status} />
+      <Navbar
+        status={status}
+        onSupportHoverStart={() => setIsSupportHovered(true)}
+        onSupportHoverEnd={() => setIsSupportHovered(false)}
+      />
 
       {/* 2. Main Body Content */}
       <main className="flex-1 flex flex-col w-full">
@@ -349,6 +354,7 @@ export default function Home() {
                 status={status}
                 resetSignal={resetSignal}
                 externalUrl={prefilledUrl}
+                externalAnticipating={isSupportHovered}
               />
 
               {/* Minimal Recents Ledger Link Teaser */}

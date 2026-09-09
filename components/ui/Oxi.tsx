@@ -358,9 +358,9 @@ export function Oxi({
 
       // High-freedom travel range:
       // Horizontally: ±12.5px (hugging the interior pillars!)
-      // Vertically: Upwards -7.5px, Downwards +25px (plunging deep toward input/footer!)
+      // Vertically: Upwards -18.5px, Downwards +25px (symmetrically fluid across full viewport height)
       const targetGazeX = nx * 12.5;
-      const targetGazeY = ny > 0 ? ny * 25.0 : ny * 7.5;
+      const targetGazeY = ny > 0 ? ny * 25.0 : ny * 18.5;
 
       setGazeOffset({
         x: targetGazeX,
@@ -650,9 +650,9 @@ export function Oxi({
         nodOffsetY +
         scrollGazeY;
 
-  // Clamp effective gaze coordinates with deep vertical freedom (+26px)
+  // Clamp effective gaze coordinates with symmetric vertical freedom (-18.5px up, +27px down)
   const effectiveGazeX = Math.max(-13, Math.min(13, rawGazeX));
-  const effectiveGazeY = Math.max(-8.5, Math.min(27, rawGazeY));
+  const effectiveGazeY = Math.max(-18.5, Math.min(27, rawGazeY));
 
   // Parallelogram Skew Angle for watchful corner gaze or energetic head shake
   const skewAngle = React.useMemo(() => {
@@ -787,12 +787,12 @@ export function Oxi({
       dynamicRightH = 5.2 - downFactor * 1.4;
       dynamicR = 0.5;
     } else if (effectiveGazeY < -2) {
-      // Looking upwards: Eyes dilate larger in curiosity
-      const upFactor = Math.min(1, Math.abs(effectiveGazeY + 2) / 6);
-      dynamicLeftH = 5.2 + upFactor * 2.5; // expands to ~7.7
-      dynamicRightH = 5.2 + upFactor * 2.5;
-      dynamicW = 7.8 + upFactor * 0.8;
-      dynamicR = 1.2;
+      // Looking upwards: Eyes dilate into curious wide circles (width: 8.4px, height: 7.6px, radius: 1.2px)
+      const upFactor = Math.min(1, Math.abs(effectiveGazeY + 2) / 14);
+      dynamicLeftH = 5.2 + upFactor * 2.4; // expands smoothly to 7.6
+      dynamicRightH = 5.2 + upFactor * 2.4; // expands smoothly to 7.6
+      dynamicW = 7.8 + upFactor * 0.6; // widens smoothly to 8.4
+      dynamicR = 0.6 + upFactor * 0.6; // rounds smoothly to 1.2
     }
 
     // Looking sideways: Natural perspective asymmetry
