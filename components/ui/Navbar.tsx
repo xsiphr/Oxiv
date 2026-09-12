@@ -16,7 +16,6 @@ export interface NavbarProps {
 }
 
 export function Navbar({
-  status: _status = 'idle',
   onSupportHoverStart,
   onSupportHoverEnd,
 }: NavbarProps) {

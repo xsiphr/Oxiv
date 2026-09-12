@@ -1,5 +1,6 @@
 import { MediaResult, MediaFormat } from '@/types';
 import { ExtractionPipelineError } from './errors';
+import { getRealContentLength, formatBytes, formatDuration, formatCount, sanitizeUrl } from './utils';
 
 interface TikWMResponse {
   code: number;
@@ -46,21 +47,20 @@ interface TikWMResponse {
  * Resolves shortened TikTok URLs (e.g. vt.tiktok.com, vm.tiktok.com) to canonical URLs.
  */
 export async function resolveTikTokUrl(inputUrl: string): Promise<string> {
+  const cleanUrl = sanitizeUrl(inputUrl);
   try {
-    const res = await fetch(inputUrl, {
+    const res = await fetch(cleanUrl, {
       method: 'HEAD',
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
     });
-    return res.url || inputUrl;
+    return res.url || cleanUrl;
   } catch {
-    return inputUrl;
+    return cleanUrl;
   }
 }
-
-import { getRealContentLength, formatBytes, formatDuration, formatCount } from './utils';
 
 /**
  * Primary Provider: Extract TikTok media via TikWM API.
@@ -252,7 +252,8 @@ async function fetchFromTikWM(canonicalUrl: string): Promise<MediaResult | null>
  * Resolves short links, queries the extraction pipeline, and strictly throws if resolution fails.
  */
 export async function extractTikTok(url: string): Promise<MediaResult> {
-  const canonicalUrl = await resolveTikTokUrl(url.trim());
+  const cleanUrl = sanitizeUrl(url);
+  const canonicalUrl = await resolveTikTokUrl(cleanUrl);
 
   // Attempt Tier 1: TikWM API Provider
   const result = await fetchFromTikWM(canonicalUrl);

@@ -81,20 +81,18 @@ export interface ExtractionError {
   statusHint?: number;
 }
 
-export interface ApiSuccessResponse {
-  success: true;
-  data: MediaResult;
-}
-
-export interface ApiErrorResponse {
-  success: false;
-  error: ExtractionError;
-}
-
-export type ApiResponse = ApiSuccessResponse | ApiErrorResponse;
+export type ApiResponse =
+  | {
+      success: true;
+      data: MediaResult;
+    }
+  | {
+      success: false;
+      error: ExtractionError;
+    };
 
 // ─── Client-Side ZIP Progress Types ───
-export type ZipStage = 'fetching' | 'compressing' | 'saving' | 'done' | 'error';
+type ZipStage = 'fetching' | 'compressing' | 'saving' | 'done' | 'error';
 
 export interface ZipProgressState {
   stage: ZipStage;
@@ -107,7 +105,7 @@ export interface ZipProgressState {
   displayText: string;
 }
 
-export type CardDownloadStatus = 'idle' | 'loading' | 'saved' | 'error';
+type CardDownloadStatus = 'idle' | 'loading' | 'saved' | 'error';
 
 export interface CardDownloadState {
   status: CardDownloadStatus;

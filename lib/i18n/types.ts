@@ -3,8 +3,6 @@ export type Locale = 'en' | 'ar';
 export interface TranslationDictionary {
   nav: {
     status: string;
-    github: string;
-    langToggle: string;
     downloader: string;
     recents: string;
     about: string;
@@ -14,15 +12,12 @@ export interface TranslationDictionary {
     support: string;
     settings: string;
     menu: string;
-    close: string;
     back: string;
   };
   megaMenu: {
-    bannerTitle: string;
     philosophyTitle: string;
     platformsTitle: string;
     faqTitle: string;
-    viewAllAbout: string;
     itemPhilosophyProtocol: string;
     itemPhilosophyArchitecture: string;
     itemPhilosophyPrivacy: string;
@@ -78,9 +73,6 @@ export interface TranslationDictionary {
   };
   support: {
     title: string;
-    subtitle: string;
-    coffeeBtn: string;
-    coffeeDesc: string;
     communityTitle: string;
     communitySubtitle: string;
     starGithubTitle: string;
@@ -98,7 +90,6 @@ export interface TranslationDictionary {
     featureBtn: string;
     quickSupportTitle: string;
     quickSupportSubtitle: string;
-    oneTimeBadge: string;
     amountPresets: {
       coffee: string;
       lunch: string;
@@ -111,9 +102,7 @@ export interface TranslationDictionary {
     disclosure: string;
   };
   hero: {
-    brand: string;
     title: string;
-    subtitle: string;
     placeholder: string;
     pasteBtn: string;
     extractBtn: string;
@@ -122,7 +111,6 @@ export interface TranslationDictionary {
   };
   terminal: {
     title: string;
-    command: string;
     resolveTitle: (platformName: string) => string;
     resolveDetail: string;
     fetchTitle: string;
@@ -139,11 +127,8 @@ export interface TranslationDictionary {
     downloadAllZip: string;
     downloadAllZipCard: string;
     downloadAllZipDesc: string;
-    videoHdZipCard: string;
     videoHdZipDesc: string;
-    videoSdZipCard: string;
     videoSdZipDesc: string;
-    videoEverythingZipCard: string;
     videoEverythingZipDesc: string;
     xVideoZipDesc: (count: number) => string;
     everythingZipCard: string;
@@ -156,8 +141,6 @@ export interface TranslationDictionary {
     modalDeselectAll: string;
     modalSelectedCount: (count: number, total: number) => string;
     modalDownloadSelected: (count: number) => string;
-    modalDownloadSelectedZip: (count: number) => string;
-    modalDownloadAllZip: string;
     modalClose: string;
     packaging: string;
     streaming: string;
@@ -165,23 +148,15 @@ export interface TranslationDictionary {
     slideOf: string;
     albumSlides: (count: number) => string;
     clickToInspect: string;
-    downloadPhoto: (index: number) => string;
     allPhotos: (count: number) => string;
-    originalMaster: string;
     losslessZipPackage: string;
     zipHint: string;
-    compressing: string;
-    saving: string;
-    directStream: string;
     notice: string;
     quotedMediaNote: string;
-    gifFormatBadge: string;
   };
   recents: {
     title: string;
     clear: string;
-    more: string;
-    collapse: string;
     pageSubtitle: string;
     filterAll: string;
     emptyTitle: string;
@@ -189,10 +164,8 @@ export interface TranslationDictionary {
     extractNow: string;
     reExtract: string;
     copyUrl: string;
-    copied: string;
     deleteItem: string;
     confirmClear: string;
-    zeroRetentionNotice: string;
     itemsCount: string;
   };
   metrics: {
@@ -261,9 +234,7 @@ export interface TranslationDictionary {
     title: string;
     subtitle: string;
     viewOnGithub: string;
-    totalCommits: (count: number) => string;
-    heatmapTitle: string;
-    heatmapSubtitle: string;
+    reload: string;
     legendLess: string;
     legendMore: string;
     historyTitle: string;
@@ -278,11 +249,9 @@ export interface TranslationDictionary {
     lastYear: string;
   };
   footer: {
-    builtBy: string;
     license: string;
     architecture: string;
     github: string;
-    support: string;
     viewSource: string;
   };
   ticker: string[];

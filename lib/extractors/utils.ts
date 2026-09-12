@@ -45,3 +45,68 @@ export function formatCount(count?: number): string {
   if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
   return count.toLocaleString();
 }
+
+/**
+ * Strips zero-width and bidirectional control characters injected by mobile keyboards or pasteboards.
+ */
+export function sanitizeUrl(url?: string): string {
+  if (!url) return '';
+  return url
+    .trim()
+    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '');
+}
+
+export interface ResolveRedirectsOptions {
+  maxHops?: number;
+  headers?: Record<string, string>;
+  timeoutMs?: number;
+  stopCondition?: (url: string) => boolean;
+}
+
+/**
+ * Follows HTTP redirects manually up to maxHops, resolving relative location headers cleanly.
+ */
+export async function resolveRedirects(
+  url: string,
+  options: ResolveRedirectsOptions = {}
+): Promise<string> {
+  const {
+    maxHops = 4,
+    headers = {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    },
+    timeoutMs = 6000,
+    stopCondition,
+  } = options;
+
+  let currentUrl = url;
+  try {
+    for (let hop = 0; hop < maxHops; hop++) {
+      const res = await fetch(currentUrl, {
+        method: 'GET',
+        redirect: 'manual',
+        headers,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+
+      const location = res.headers.get('location');
+      if (!location) break;
+
+      let nextTarget = location;
+      if (nextTarget.startsWith('/')) {
+        const origin = new URL(currentUrl).origin;
+        nextTarget = `${origin}${nextTarget}`;
+      }
+
+      currentUrl = nextTarget;
+      if (stopCondition && stopCondition(currentUrl)) {
+        break;
+      }
+    }
+  } catch {
+    // Continue with current best resolved URL
+  }
+  return currentUrl;
+}
+

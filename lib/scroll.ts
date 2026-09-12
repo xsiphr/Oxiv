@@ -31,7 +31,7 @@ export function smoothScrollTo(targetY: number, duration: number = 850) {
 export function scrollToElement(
   element: HTMLElement | null,
   duration: number = 850,
-  offset: number = 116
+  offset: number = 76
 ) {
   if (!element || typeof window === 'undefined') return;
   const elementRect = element.getBoundingClientRect();
@@ -40,16 +40,3 @@ export function scrollToElement(
   smoothScrollTo(targetY, duration);
 }
 
-export function scrollToHash(
-  hash: string,
-  duration: number = 850,
-  offset: number = 116
-) {
-  if (typeof window === 'undefined') return;
-  const cleanId = hash.replace(/^#/, '');
-  if (!cleanId) return;
-  const element = document.getElementById(cleanId);
-  if (element) {
-    scrollToElement(element, duration, offset);
-  }
-}

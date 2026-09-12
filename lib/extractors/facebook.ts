@@ -1,6 +1,6 @@
 import { MediaResult, MediaFormat, MediaItem } from '@/types';
 import { ExtractionPipelineError } from './errors';
-import { getRealContentLength, formatBytes, formatDuration } from './utils';
+import { getRealContentLength, formatBytes, formatDuration, sanitizeUrl, resolveRedirects } from './utils';
 import { decodeHtmlEntities } from '@/lib/utils';
 
 export type FacebookContentType =
@@ -48,7 +48,7 @@ export const FB_GRAPHQL_HEADERS: HeadersInit = {
  * to canonical www.facebook.com desktop URLs.
  */
 export async function resolveFacebookUrl(inputUrl: string): Promise<string> {
-  let currentUrl = inputUrl.trim();
+  let currentUrl = sanitizeUrl(inputUrl);
   if (!currentUrl.startsWith('http://') && !currentUrl.startsWith('https://')) {
     currentUrl = `https://${currentUrl}`;
   }
@@ -70,32 +70,12 @@ export async function resolveFacebookUrl(inputUrl: string): Promise<string> {
 
   // Follow redirects for shortlinks (fb.watch, fb.com, bit.ly, etc.)
   if (currentUrl.includes('fb.watch') || currentUrl.includes('fb.com') || currentUrl.includes('/share/')) {
-    try {
-      for (let hop = 0; hop < 4; hop++) {
-        const res = await fetch(currentUrl, {
-          method: 'GET',
-          redirect: 'manual',
-          headers: FB_DESKTOP_HEADERS,
-          signal: AbortSignal.timeout(6000),
-        });
-
-        const location = res.headers.get('location');
-        if (!location) break;
-
-        let nextTarget = location;
-        if (nextTarget.startsWith('/')) {
-          const origin = new URL(currentUrl).origin;
-          nextTarget = `${origin}${nextTarget}`;
-        }
-
-        currentUrl = nextTarget;
-        if (currentUrl.includes('facebook.com') && !currentUrl.includes('fb.watch') && !currentUrl.includes('/share/')) {
-          break;
-        }
-      }
-    } catch {
-      // Graceful fallback if redirect resolution times out
-    }
+    currentUrl = await resolveRedirects(currentUrl, {
+      headers: FB_DESKTOP_HEADERS as Record<string, string>,
+      timeoutMs: 6000,
+      stopCondition: (target) =>
+        target.includes('facebook.com') && !target.includes('fb.watch') && !target.includes('/share/'),
+    });
   }
 
   // Ensure final target is www.facebook.com
@@ -437,8 +417,9 @@ function extractBboxJsonObjects(html: string): unknown[] {
  * 3. Photo Albums: All collection photos + Lossless ZIP Package
  * 4. Group Posts: Photo / Video with private-group protection
  */
-export async function extractFacebook(inputUrl: string): Promise<MediaResult> {
-  const canonicalUrl = await resolveFacebookUrl(inputUrl);
+export async function extractFacebook(url: string): Promise<MediaResult> {
+  const cleanUrl = sanitizeUrl(url);
+  const canonicalUrl = await resolveFacebookUrl(cleanUrl);
   const contentType = identifyFacebookContentType(canonicalUrl);
 
   if (contentType === 'unknown') {

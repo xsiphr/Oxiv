@@ -1,7 +1,7 @@
 import { MediaResult, MediaFormat, MediaItem } from '@/types';
 import { ExtractionPipelineError } from './errors';
 import { decodeHtmlEntities } from '@/lib/utils';
-import { getRealContentLength, formatBytes, formatDuration } from './utils';
+import { getRealContentLength, formatBytes, formatDuration, sanitizeUrl, resolveRedirects } from './utils';
 
 interface PinterestRendition {
   url?: string;
@@ -85,49 +85,22 @@ interface PinterestWidgetResponse {
  * Resolves shortened Pinterest URLs (e.g. pin.it/...) to canonical URLs.
  */
 export async function resolvePinterestUrl(inputUrl: string): Promise<string> {
-  try {
-    if (/\/pin\/\d+/.test(inputUrl)) return inputUrl;
+  const cleanUrl = sanitizeUrl(inputUrl);
+  if (/\/pin\/\d+/.test(cleanUrl)) return cleanUrl;
 
-    let currentUrl = inputUrl.trim();
-    if (!currentUrl.startsWith('http')) currentUrl = `https://${currentUrl}`;
+  let currentUrl = cleanUrl;
+  if (!currentUrl.startsWith('http')) currentUrl = `https://${currentUrl}`;
 
-    for (let hop = 0; hop < 4; hop++) {
-      if (/\/pin\/\d+/.test(currentUrl)) return currentUrl;
-
-      const res = await fetch(currentUrl, {
-        method: 'GET',
-        redirect: 'manual',
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-        signal: AbortSignal.timeout(6000),
-      });
-
-      const location = res.headers.get('location');
-      if (!location) break;
-
-      let nextTarget = location;
-      if (nextTarget.startsWith('/')) {
-        const origin = new URL(currentUrl).origin;
-        nextTarget = `${origin}${nextTarget}`;
-      }
-
-      if (/\/pin\/\d+/.test(nextTarget)) return nextTarget;
-
-      // If redirected to pinterest homepage or generic landing, the short link is invalid or expired
-      if (/^https?:\/\/(www\.)?pinterest\.[a-z.]+\/?$/i.test(nextTarget)) {
-        return nextTarget;
-      }
-
-      currentUrl = nextTarget;
-    }
-
-    return currentUrl;
-  } catch {
-    return inputUrl;
-  }
+  return resolveRedirects(currentUrl, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    timeoutMs: 6000,
+    stopCondition: (target) =>
+      /\/pin\/\d+/.test(target) || /^https?:\/\/(www\.)?pinterest\.[a-z.]+\/?$/i.test(target),
+  });
 }
 
 /**
@@ -905,7 +878,8 @@ export async function fetchFromPinterestBoardWidget(user: string, board: string,
  * Resolves short links, extracts Pin ID or Board parameters, queries widget endpoint, and returns authentic MediaResult.
  */
 export async function extractPinterest(url: string): Promise<MediaResult> {
-  const canonicalUrl = await resolvePinterestUrl(url.trim());
+  const cleanUrl = sanitizeUrl(url);
+  const canonicalUrl = await resolvePinterestUrl(cleanUrl);
   const pinId = extractPinterestId(canonicalUrl);
 
   if (pinId) {

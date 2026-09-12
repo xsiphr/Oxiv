@@ -114,7 +114,7 @@ export function SettingsContent() {
                         }`}
                       >
                         <Moon className="w-4 h-4" />
-                        <span>Dark</span>
+                        <span>{t.settings.themeDark}</span>
                       </button>
 
                       <button
@@ -127,7 +127,7 @@ export function SettingsContent() {
                         }`}
                       >
                         <Sun className="w-4 h-4" />
-                        <span>Light</span>
+                        <span>{t.settings.themeLight}</span>
                       </button>
                     </div>
                   </div>

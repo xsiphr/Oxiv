@@ -1,6 +1,6 @@
 import { MediaResult, MediaFormat, MediaItem, MediaAuthor } from '@/types';
 import { ExtractionPipelineError } from './errors';
-import { getRealContentLength, formatBytes, formatDuration, formatCount } from './utils';
+import { getRealContentLength, formatBytes, formatDuration, formatCount, sanitizeUrl } from './utils';
 
 // ─── Strict TypeScript Interfaces for X Syndication API ───
 
@@ -114,9 +114,7 @@ export async function resolveXShortlink(inputUrl: string): Promise<string> {
  * Normalizes input URL and extracts the numeric tweet status snowflake ID.
  */
 export function extractTweetId(inputUrl: string): string | null {
-  const sanitized = inputUrl
-    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '')
-    .trim();
+  const sanitized = sanitizeUrl(inputUrl);
   if (!sanitized) return null;
 
   try {
@@ -155,10 +153,8 @@ function extractResolutionFromUrl(url: string): string | undefined {
  * High-precision, unauthenticated media extractor for public X (Twitter) posts.
  * Fetches SSR JSON payloads from X Syndication CDN with zero third-party dependencies.
  */
-export async function extractX(inputUrl: string): Promise<MediaResult> {
-  let resolvedUrl = inputUrl
-    .replace(/[\u200B-\u200D\uFEFF\u200E\u200F\u202A-\u202E]/g, '')
-    .trim();
+export async function extractX(url: string): Promise<MediaResult> {
+  let resolvedUrl = sanitizeUrl(url);
 
   if (resolvedUrl.includes('t.co/')) {
     resolvedUrl = await resolveXShortlink(resolvedUrl);
@@ -167,7 +163,7 @@ export async function extractX(inputUrl: string): Promise<MediaResult> {
   const tweetId = extractTweetId(resolvedUrl);
   if (!tweetId) {
     throw new ExtractionPipelineError('INVALID_URL', 'Invalid X post URL or post ID.', {
-      technicalDetail: `Could not parse tweet snowflake ID from input: ${inputUrl}`,
+      technicalDetail: `Could not parse tweet snowflake ID from input: ${url}`,
       platform: 'x',
       statusHint: 400,
     });
@@ -474,7 +470,7 @@ export async function extractX(inputUrl: string): Promise<MediaResult> {
 
   const result: MediaResult = {
     id: targetTweet.id_str || tweetId,
-    originalUrl: inputUrl,
+    originalUrl: url,
     platform: 'x',
     title: cleanTitle,
     description: targetTweet.text || cleanTitle,
