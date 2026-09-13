@@ -272,7 +272,8 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
 
     for (let i = 0; i < selectedList.length; i++) {
       const { item, originalIndex } = selectedList[i];
-      const filename = `oxiv-${media.platform}-${cleanId}-photo-${String(originalIndex).padStart(2, '0')}.${(item.extension || 'jpg').toLowerCase()}`;
+      const typeLabel = item.type === 'video' ? 'video' : 'photo';
+      const filename = `oxiv-${media.platform}-${cleanId}-${typeLabel}-${String(originalIndex).padStart(2, '0')}.${(item.extension || 'jpg').toLowerCase()}`;
       executeSingleDownload(item.url, filename);
       if (i < selectedList.length - 1) {
         await new Promise((r) => setTimeout(r, 350));
@@ -306,7 +307,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
       media.items.map((it, idx) => ({
         url: it.url,
         filename: `slide-${String(idx + 1).padStart(2, '0')}`,
-        kind: 'photo' as const,
+        kind: it.type === 'video' ? ('video' as const) : ('photo' as const),
         extension: it.extension.toLowerCase(),
       })),
       filename,
@@ -479,7 +480,9 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
     }
   };
 
-  const activeDisplayUrl = activeItem?.url || media.thumbnail;
+  const activeDisplayUrl =
+    (activeItem?.type === 'video' ? activeItem.thumbnail : activeItem?.url) ||
+    media.thumbnail;
   const totalSlides = media.items?.length || 1;
 
   // Streams list for display
@@ -578,7 +581,8 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                 {/* Slide Counter / Duration Overlay */}
                 {isCollection ? (
                   <div className="absolute bottom-3 left-3 flex items-center gap-2 font-mono text-xs pointer-events-none">
-                    <span className="px-2.5 py-1 rounded-md bg-black/40 border border-white/20 text-white backdrop-blur-md backdrop-saturate-150 font-semibold shadow-lg shadow-black/25">
+                    <span className="px-2.5 py-1 rounded-md bg-black/40 border border-white/20 text-white backdrop-blur-md backdrop-saturate-150 font-semibold shadow-lg shadow-black/25 flex items-center gap-1.5">
+                      {activeItem?.type === 'video' && <Film className="w-3 h-3 text-white" />}
                       {t.preview.slideOf} {activeSlideIndex + 1} / {totalSlides}
                     </span>
                   </div>
@@ -662,6 +666,11 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                           <span className="absolute bottom-1 left-1 z-10 px-1.5 py-0.5 rounded bg-black/40 border border-white/20 text-[10px] font-mono text-white backdrop-blur-xs font-medium shadow-xs pointer-events-none">
                             #{index + 1}
                           </span>
+                          {item.type === 'video' && (
+                            <span className="absolute top-1 right-1 z-10 p-1 rounded bg-black/50 border border-white/20 text-white backdrop-blur-xs shadow-xs pointer-events-none">
+                              <Film className="w-2.5 h-2.5" />
+                            </span>
+                          )}
                           {isLastSlot && (
                             <div className="absolute inset-0 z-10 bg-black/85 flex items-center justify-center font-mono text-xs font-bold text-white pointer-events-none">
                               +{remainingCount}

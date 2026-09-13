@@ -11,11 +11,11 @@ interface PlatformBadgesProps {
   activePlatform: Platform;
 }
 
-const PRIMARY_PLATFORMS = ['tiktok', 'pinterest', 'facebook', 'x']
+const PRIMARY_PLATFORMS = ['tiktok', 'instagram', 'pinterest', 'facebook', 'x']
   .map((id) => PLATFORM_REGISTRY.find((p) => p.id === id))
   .filter((p): p is PlatformEntry => Boolean(p));
 
-const SECONDARY_PLATFORMS = ['instagram', 'youtube']
+const SECONDARY_PLATFORMS = ['youtube']
   .map((id) => PLATFORM_REGISTRY.find((p) => p.id === id))
   .filter((p): p is PlatformEntry => Boolean(p));
 

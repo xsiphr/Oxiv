@@ -264,7 +264,7 @@ export const en: TranslationDictionary = {
       },
       instagram: {
         name: 'Instagram',
-        formats: 'Reels MP4, Posts Carousel, Audio',
+        formats: 'HD Reel MP4, master photos, multi-item carousels + ZIP',
       },
       x: {
         name: 'X',

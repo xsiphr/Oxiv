@@ -54,17 +54,17 @@ export const PLATFORM_REGISTRY: PlatformEntry[] = [
     status: 'live',
     formats: 'HD/SD MP4 video, original master photos, animated GIFs + ZIP',
   },
-
-  // ─── 2. Next Up (In Active Pipeline Build) ───
-
-  // ─── 3. Planned Platforms (In Active Pipeline Deployment) ───
   {
     id: 'instagram',
     name: 'Instagram',
     domains: ['instagram.com', 'instagr.am'],
-    status: 'planned',
-    formats: 'Reels MP4, Posts Carousel, Audio',
+    status: 'live',
+    formats: 'HD Reel MP4, master photos, multi-item carousels + ZIP',
   },
+
+  // ─── 2. Next Up (In Active Pipeline Build) ───
+
+  // ─── 3. Planned Platforms (In Active Pipeline Deployment) ───
   {
     id: 'youtube',
     name: 'YouTube',

@@ -276,7 +276,7 @@ export const ar: TranslationDictionary = {
       },
       instagram: {
         name: 'إنستغرام',
-        formats: 'مقاطع Reels بصيغة MP4، ألبومات الصور، مقاطع صوتية',
+        formats: 'مقاطع Reels بصيغة MP4، صور أصلية بدقة الماستر، ألبومات متعددة الوسائط + ZIP',
       },
       x: {
         name: 'إكس',

@@ -3,6 +3,7 @@ import { lookupPlatform, LookupResult } from '@/lib/platformRegistry';
 import { extractTikTok } from '@/lib/extractors/tiktok';
 import { extractPinterest } from '@/lib/extractors/pinterest';
 import { extractFacebook } from '@/lib/extractors/facebook';
+import { extractInstagram } from '@/lib/extractors/instagram';
 import { extractX } from '@/lib/extractors/x';
 import { ExtractionPipelineError } from '@/lib/extractors/errors';
 import { ApiResponse, MediaResult } from '@/types';
@@ -71,6 +72,8 @@ async function handleExtraction(url: string, lookup: LookupResult): Promise<Next
         mediaResult = await extractPinterest(url);
       } else if (lookup.platform.id === 'facebook') {
         mediaResult = await extractFacebook(url);
+      } else if (lookup.platform.id === 'instagram') {
+        mediaResult = await extractInstagram(url);
       } else if (lookup.platform.id === 'x') {
         mediaResult = await extractX(url);
       } else {
@@ -205,8 +208,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       status: 'active',
       service: 'Oxiv Media Extraction Engine',
-      supportedLive: ['tiktok', 'pinterest', 'facebook', 'x'],
-      pipelinePending: ['instagram', 'youtube'],
+      supportedLive: ['tiktok', 'instagram', 'pinterest', 'facebook', 'x'],
+      pipelinePending: ['youtube'],
       usage: 'POST /api/extract with { url } or GET /api/extract?url=...',
     });
   }
