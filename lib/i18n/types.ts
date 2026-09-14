@@ -1,4 +1,5 @@
 export type Locale = 'en' | 'ar';
+export type CollectionKind = 'photos' | 'videos' | 'mixed';
 
 export interface TranslationDictionary {
   nav: {
@@ -133,6 +134,13 @@ export interface TranslationDictionary {
     xVideoZipDesc: (count: number) => string;
     everythingZipCard: string;
     everythingZipDesc: string;
+    collectionZipTitle: (count: number, kind: CollectionKind) => string;
+    collectionLosslessZip: (kind: CollectionKind) => string;
+    collectionSelectTitle: (kind: CollectionKind) => string;
+    collectionSelectDesc: (kind: CollectionKind) => string;
+    collectionCountBadge: (count: number, kind: CollectionKind) => string;
+    collectionModalTitle: (kind: CollectionKind) => string;
+    collectionModalSelectedCount: (count: number, total: number, kind: CollectionKind) => string;
     selectPhotos: string;
     selectPhotosDesc: string;
     selectBtn: string;

@@ -45,6 +45,19 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
   const activeItem: MediaItem | null =
     isCollection && media.items ? media.items[activeSlideIndex] || media.items[0] : null;
 
+  const collectionKind = useMemo<'photos' | 'videos' | 'mixed'>(() => {
+    if (!media.items || media.items.length === 0) {
+      return 'photos';
+    }
+    const photos = media.items.filter(
+      (it) => it.type === 'image' || (it.type as string) === 'photo'
+    ).length;
+    const videos = media.items.filter((it) => it.type === 'video').length;
+    if (photos > 0 && videos > 0) return 'mixed';
+    if (videos > 0) return 'videos';
+    return 'photos';
+  }, [media.items]);
+
   // Reset states if media result changes
   useEffect(() => {
     setPackagedZipSize(null);
@@ -324,7 +337,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
     const photoItems: ZipBundleItem[] = media.items.map((it, idx) => ({
       url: it.url,
       filename: `slide-${String(idx + 1).padStart(2, '0')}`,
-      kind: 'photo',
+      kind: it.type === 'video' ? ('video' as const) : ('photo' as const),
       extension: it.extension.toLowerCase(),
     }));
 
@@ -453,7 +466,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
       if (isHd) suffix = 'video-hd';
       else if (isMedium) suffix = 'video-medium';
       else if (isSd) suffix = 'video-sd';
-      else suffix = 'video';
+      else suffix = isCollection ? `video-${activeSlideIndex + 1}` : 'video';
     }
     const filename = `oxiv-${media.platform}-${cleanId}-${suffix}.${format.extension.toLowerCase()}`;
     executeSingleDownload(format.downloadUrl, filename, format.id);
@@ -760,13 +773,13 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                 {isCollection ? (
                   /* ─── PHOTO / SLIDESHOW MODE ─── */
                   <>
-                    {/* 1. All Photos (ZIP) Card */}
+                    {/* 1. All Photos / Videos / Items (ZIP) Card */}
                     <div className="p-3.5 rounded-xl border bg-[var(--colors-surface-card)] border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group shadow-xs outline-none">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <Archive className="w-3.5 h-3.5 text-[var(--colors-muted)] group-hover:text-[var(--colors-ink)] transition-colors" />
                           <span className="font-body text-xs sm:text-sm font-semibold text-[var(--colors-ink)]">
-                            {t.preview.allPhotos(media.items?.length || 0)}
+                            {t.preview.collectionZipTitle(media.items?.length || 0, collectionKind)}
                           </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-[var(--colors-muted)]">
@@ -778,7 +791,7 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                               ? `${media.items?.length || 0} Files • ${packagedZipSize}`
                               : `${media.items?.length || 0} Files`}
                           </span>
-                          <span>• {t.preview.losslessZipPackage}</span>
+                          <span>• {t.preview.collectionLosslessZip(collectionKind)}</span>
                         </div>
                         <p className="font-body text-[11px] text-[var(--colors-muted)] leading-tight pt-0.5">
                           {t.preview.zipHint}
@@ -820,20 +833,26 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                       })()}
                     </div>
 
-                    {/* 2. Single "Select Photos" Picker Card */}
+                    {/* 2. Single "Select" Picker Card */}
                     <div className="p-3.5 rounded-xl border bg-[var(--colors-surface-card)] border-[var(--colors-hairline)] hover:border-[var(--colors-hairline-strong)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group shadow-xs outline-none">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <ImageIcon className="w-3.5 h-3.5 text-[var(--colors-muted)] group-hover:text-[var(--colors-ink)] transition-colors" />
+                          {collectionKind === 'videos' ? (
+                            <Film className="w-3.5 h-3.5 text-[var(--colors-muted)] group-hover:text-[var(--colors-ink)] transition-colors" />
+                          ) : collectionKind === 'mixed' ? (
+                            <Layers className="w-3.5 h-3.5 text-[var(--colors-muted)] group-hover:text-[var(--colors-ink)] transition-colors" />
+                          ) : (
+                            <ImageIcon className="w-3.5 h-3.5 text-[var(--colors-muted)] group-hover:text-[var(--colors-ink)] transition-colors" />
+                          )}
                           <span className="font-body text-xs sm:text-sm font-semibold text-[var(--colors-ink)]">
-                            {t.preview.selectPhotos}
+                            {t.preview.collectionSelectTitle(collectionKind)}
                           </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-[var(--colors-muted)]">
                           <span className="px-1.5 py-0.5 rounded bg-[var(--colors-surface-elevated)] border border-[var(--colors-hairline)] text-[var(--colors-body)]">
-                            {media.items?.length || 0} Photos
+                            {t.preview.collectionCountBadge(media.items?.length || 0, collectionKind)}
                           </span>
-                          <span>{t.preview.selectPhotosDesc}</span>
+                          <span>{t.preview.collectionSelectDesc(collectionKind)}</span>
                         </div>
                       </div>
 
@@ -1280,12 +1299,13 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
               <div className="flex items-center justify-between gap-2">
                 <div className="space-y-0.5 min-w-0">
                   <h3 className="font-display font-bold text-base sm:text-lg text-[var(--colors-ink)] truncate">
-                    {t.preview.modalTitle}
+                    {t.preview.collectionModalTitle(collectionKind)}
                   </h3>
                   <p className="font-mono text-xs text-[var(--colors-muted)]">
-                    {t.preview.modalSelectedCount(
+                    {t.preview.collectionModalSelectedCount(
                       selectedPhotoIndices.size,
-                      media.items.length
+                      media.items.length,
+                      collectionKind
                     )}
                   </p>
                 </div>

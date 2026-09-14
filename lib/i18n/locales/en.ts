@@ -1,4 +1,4 @@
-import { TranslationDictionary } from '../types';
+import { TranslationDictionary, CollectionKind } from '../types';
 
 export const en: TranslationDictionary = {
   nav: {
@@ -136,6 +136,41 @@ export const en: TranslationDictionary = {
         : `All ${count} video qualities bundled together`,
     everythingZipCard: 'Everything (ZIP)',
     everythingZipDesc: 'All photos + audio bundled together',
+    collectionZipTitle: (count: number, kind: CollectionKind) => {
+      if (kind === 'videos') return `All ${count} Videos (ZIP)`;
+      if (kind === 'mixed') return `All ${count} Items (ZIP)`;
+      return `All ${count} Photos (ZIP)`;
+    },
+    collectionLosslessZip: (kind: CollectionKind) => {
+      if (kind === 'videos') return 'Lossless ZIP package containing all raw videos';
+      if (kind === 'mixed') return 'Lossless ZIP package containing all raw media';
+      return 'Lossless ZIP package containing all raw photos';
+    },
+    collectionSelectTitle: (kind: CollectionKind) => {
+      if (kind === 'videos') return 'Select Videos';
+      if (kind === 'mixed') return 'Select Media';
+      return 'Select Photos';
+    },
+    collectionSelectDesc: (kind: CollectionKind) => {
+      if (kind === 'videos') return 'Choose specific videos to download';
+      if (kind === 'mixed') return 'Choose specific items to download';
+      return 'Choose specific photos to download';
+    },
+    collectionCountBadge: (count: number, kind: CollectionKind) => {
+      if (kind === 'videos') return `${count} Videos`;
+      if (kind === 'mixed') return `${count} Items`;
+      return `${count} Photos`;
+    },
+    collectionModalTitle: (kind: CollectionKind) => {
+      if (kind === 'videos') return 'Select Videos to Download';
+      if (kind === 'mixed') return 'Select Media to Download';
+      return 'Select Photos to Download';
+    },
+    collectionModalSelectedCount: (count: number, total: number, kind: CollectionKind) => {
+      if (kind === 'videos') return `${count} of ${total} videos selected`;
+      if (kind === 'mixed') return `${count} of ${total} items selected`;
+      return `${count} of ${total} photos selected`;
+    },
     selectPhotos: 'Select Photos',
     selectPhotosDesc: 'Choose specific photos to download',
     selectBtn: 'Select…',

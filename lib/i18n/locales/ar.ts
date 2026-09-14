@@ -1,4 +1,4 @@
-import { TranslationDictionary } from '../types';
+import { TranslationDictionary, CollectionKind } from '../types';
 
 export const ar: TranslationDictionary = {
   nav: {
@@ -136,6 +136,41 @@ export const ar: TranslationDictionary = {
         : `تجميع كافة جودات الفيديو (${count} ملفات) معاً في ملف واحد`,
     everythingZipCard: 'الكل مع الصوت (ZIP)',
     everythingZipDesc: 'تجميع جميع الصور والمسار الصوتي في ملف واحد',
+    collectionZipTitle: (count: number, kind: CollectionKind) => {
+      if (kind === 'videos') return `جميع الفيديوهات (${count} فيديوهات)`;
+      if (kind === 'mixed') return `جميع الوسائط (${count} عناصر)`;
+      return `جميع الصور (${count} صور)`;
+    },
+    collectionLosslessZip: (kind: CollectionKind) => {
+      if (kind === 'videos') return 'حزمة ZIP غير مضغوطة تحتوي على كافة الفيديوهات الأصلية';
+      if (kind === 'mixed') return 'حزمة ZIP غير مضغوطة تحتوي على كافة الوسائط الأصلية';
+      return 'حزمة ZIP غير مضغوطة تحتوي على كافة الصور الأصلية';
+    },
+    collectionSelectTitle: (kind: CollectionKind) => {
+      if (kind === 'videos') return 'تحديد الفيديوهات';
+      if (kind === 'mixed') return 'تحديد الوسائط';
+      return 'تحديد الصور';
+    },
+    collectionSelectDesc: (kind: CollectionKind) => {
+      if (kind === 'videos') return 'اختر فيديوهات محددة لتنزيلها';
+      if (kind === 'mixed') return 'اختر وسائط محددة لتنزيلها';
+      return 'اختر صوراً محددة لتنزيلها';
+    },
+    collectionCountBadge: (count: number, kind: CollectionKind) => {
+      if (kind === 'videos') return `${count} فيديوهات`;
+      if (kind === 'mixed') return `${count} عناصر`;
+      return `${count} صور`;
+    },
+    collectionModalTitle: (kind: CollectionKind) => {
+      if (kind === 'videos') return 'تحديد الفيديوهات للتنزيل';
+      if (kind === 'mixed') return 'تحديد الوسائط للتنزيل';
+      return 'تحديد الصور للتنزيل';
+    },
+    collectionModalSelectedCount: (count: number, total: number, kind: CollectionKind) => {
+      if (kind === 'videos') return `تم تحديد ${count} من أصل ${total} فيديو`;
+      if (kind === 'mixed') return `تم تحديد ${count} من أصل ${total} عنصر`;
+      return `تم تحديد ${count} من أصل ${total} صورة`;
+    },
     selectPhotos: 'تحديد الصور',
     selectPhotosDesc: 'اختر صوراً محددة لتنزيلها',
     selectBtn: 'تحديد…',
