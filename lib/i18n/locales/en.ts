@@ -274,6 +274,14 @@ export const en: TranslationDictionary = {
           'Oxiv uses privacy-friendly, cookie-less Web Analytics to understand aggregate site traffic (visits, pages, approximate region) — no personal identifiers, fingerprinting, or cookies are involved. This is separate from the extraction pipeline: no extraction URLs, submitted links, IP addresses, or downloaded media are ever logged or stored on our servers. Extraction stays fully stateless as described in our architecture.',
         technicalNote: 'Anonymous aggregate telemetry for general site traffic only; zero logs on extraction pipeline.',
       },
+      {
+        id: 'faq-9',
+        question: 'Why is YouTube not supported?',
+        answer:
+          'YouTube stream delivery requires executing Google’s obfuscated, frequently-rotating player JavaScript bundle to decipher signature tokens and solve runtime n-parameter challenges. Furthermore, modern streams enforce Proof-of-Origin (PO Token / BotGuard) attestation that systematically blocks unauthenticated, non-browser requests, while 720p+ streams are served as isolated DASH fragments requiring server-side transcoding and muxing. Supporting YouTube would require introducing heavy headless browsers (Puppeteer), containerized ffmpeg workers, or paid third-party scraping bypass services — all of which fundamentally violate Oxiv’s 100% stateless, native-fetch, edge-ready architecture.',
+        technicalNote:
+          'Incompatible with pure Node.js fetch; requires JS engine sandboxing, PO token attestation, and DASH muxing.',
+      },
     ],
   },
   platforms: {
@@ -304,10 +312,6 @@ export const en: TranslationDictionary = {
       x: {
         name: 'X',
         formats: 'HD/SD MP4 video, original master photos, animated GIFs + ZIP',
-      },
-      youtube: {
-        name: 'YouTube',
-        formats: 'Video MP4, Audio',
       },
     },
   },

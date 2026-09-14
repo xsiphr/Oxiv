@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { SiTiktok, SiPinterest, SiInstagram, SiFacebook, SiX, SiYoutube } from 'react-icons/si';
+import { SiTiktok, SiPinterest, SiInstagram, SiFacebook, SiX } from 'react-icons/si';
 import { LogoLoop, LogoItem } from './LogoLoop';
 import { useI18n } from '@/lib/i18n';
 
@@ -50,15 +50,6 @@ const PLATFORM_LOGOS: LogoItem[] = [
       </span>
     ),
     title: 'X',
-  },
-  {
-    node: (
-      <span className="flex items-center gap-2.5 text-[var(--colors-muted)] hover:text-[var(--colors-ink)] transition-colors cursor-default" title="YouTube">
-        <SiYoutube className="w-5 h-5 shrink-0" />
-        <span className="font-mono text-xs font-medium tracking-tight">YouTube</span>
-      </span>
-    ),
-    title: 'YouTube',
   },
 ];
 

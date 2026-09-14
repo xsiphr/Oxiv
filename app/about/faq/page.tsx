@@ -30,7 +30,7 @@ export default function FAQPage() {
   };
 
   const privacyItemIds = ['faq-2', 'faq-4', 'faq-5', 'faq-8'];
-  const howItWorksItemIds = ['faq-1', 'faq-3', 'faq-6', 'faq-7'];
+  const howItWorksItemIds = ['faq-1', 'faq-3', 'faq-6', 'faq-7', 'faq-9'];
 
   const privacyItems = t.faq.items.filter((item) => privacyItemIds.includes(item.id));
   const howItWorksItems = t.faq.items.filter((item) => howItWorksItemIds.includes(item.id));

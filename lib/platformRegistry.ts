@@ -64,15 +64,6 @@ export const PLATFORM_REGISTRY: PlatformEntry[] = [
 
   // ─── 2. Next Up (In Active Pipeline Build) ───
 
-  // ─── 3. Planned Platforms (In Active Pipeline Deployment) ───
-  {
-    id: 'youtube',
-    name: 'YouTube',
-    domains: ['youtube.com', 'youtu.be', 'm.youtube.com', 'music.youtube.com'],
-    status: 'planned',
-    formats: 'Video MP4, Audio',
-  },
-
   // ─── 3. Recognized but Unsupported Platforms (No immediate roadmap) ───
   {
     id: 'reddit',

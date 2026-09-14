@@ -53,8 +53,7 @@
 | **Pinterest** | `● Live` | Pins, Videos | Original high-res master JPEGs, 1080p MP4 |
 | **Facebook** | `● Live` | Reels, Videos, Photos, Albums | Mobile shortlink resolution, PCB multi-photo sets, M4A DASH audio |
 | **X (Twitter)** | `● Live` | Videos, GIFs, Master Photos | Progressive MP4 bitrate ladder (1080p–360p), 4K orig photos, quoted fallback |
-| **Instagram** | `○ Planned` | Reels, Posts, Carousels | Pipeline in development |
-| **YouTube** | `○ Planned` | Shorts, Videos, Audio | Pipeline in development |
+| **Instagram** | `● Live` | Reels, Posts, Carousels | HD Reel MP4, master photos, multi-item carousels + ZIP |
 
 ---
 

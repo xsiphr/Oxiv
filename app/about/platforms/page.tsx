@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { SiTiktok, SiInstagram, SiFacebook, SiPinterest, SiX, SiYoutube } from 'react-icons/si';
+import { SiTiktok, SiInstagram, SiFacebook, SiPinterest, SiX } from 'react-icons/si';
 import { PLATFORM_REGISTRY } from '@/lib/platformRegistry';
 import { PlatformLogoStrip } from '@/components/effects/PlatformLogoStrip';
 import { useI18n } from '@/lib/i18n';
@@ -18,8 +18,6 @@ function getPlatformIcon(id: string) {
       return <SiInstagram className="w-5 h-5 shrink-0" />;
     case 'x':
       return <SiX className="w-5 h-5 shrink-0" />;
-    case 'youtube':
-      return <SiYoutube className="w-5 h-5 shrink-0" />;
     default:
       return null;
   }
@@ -127,7 +125,7 @@ export default function PlatformsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[var(--colors-muted)] select-none">$</span>
-                  <span className="text-[var(--colors-ink)]">youtube.com/watch?v=…</span>
+                  <span className="text-[var(--colors-ink)]">facebook.com/share/…</span>
                 </div>
               </div>
 
@@ -147,7 +145,7 @@ export default function PlatformsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[var(--colors-muted)] select-none">$</span>
-                  <span className="text-[var(--colors-ink)]">youtu.be/…</span>
+                  <span className="text-[var(--colors-ink)]">twitter.com/…/status/…</span>
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-export type Platform = 'tiktok' | 'instagram' | 'pinterest' | 'x' | 'facebook' | 'youtube' | 'unknown';
+export type Platform = 'tiktok' | 'instagram' | 'pinterest' | 'x' | 'facebook' | 'unknown';
 
 export interface MediaFormat {
   id: string;

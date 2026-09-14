@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Platform } from '@/types';
-import { SiTiktok, SiInstagram, SiPinterest, SiX, SiFacebook, SiYoutube } from 'react-icons/si';
+import { SiTiktok, SiInstagram, SiPinterest, SiX, SiFacebook } from 'react-icons/si';
 
 import { PLATFORM_REGISTRY, PlatformEntry } from '@/lib/platformRegistry';
 import { useI18n } from '@/lib/i18n';
@@ -12,10 +12,6 @@ interface PlatformBadgesProps {
 }
 
 const PRIMARY_PLATFORMS = ['tiktok', 'instagram', 'pinterest', 'facebook', 'x']
-  .map((id) => PLATFORM_REGISTRY.find((p) => p.id === id))
-  .filter((p): p is PlatformEntry => Boolean(p));
-
-const SECONDARY_PLATFORMS = ['youtube']
   .map((id) => PLATFORM_REGISTRY.find((p) => p.id === id))
   .filter((p): p is PlatformEntry => Boolean(p));
 
@@ -34,8 +30,6 @@ export function PlatformBadges({ activePlatform }: PlatformBadgesProps) {
         return <SiPinterest className="w-3.5 h-3.5 shrink-0" />;
       case 'x':
         return <SiX className="w-3.5 h-3.5 shrink-0" />;
-      case 'youtube':
-        return <SiYoutube className="w-3.5 h-3.5 shrink-0" />;
       default:
         return null;
     }
@@ -67,13 +61,8 @@ export function PlatformBadges({ activePlatform }: PlatformBadgesProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center gap-2 select-none">
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
-        {PRIMARY_PLATFORMS.map(renderBadge)}
-      </div>
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
-        {SECONDARY_PLATFORMS.map(renderBadge)}
-      </div>
+    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 select-none">
+      {PRIMARY_PLATFORMS.map(renderBadge)}
     </div>
   );
 }

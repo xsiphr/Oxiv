@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { History, Trash2, Copy, Check, CornerDownLeft, Filter, AlertTriangle } from 'lucide-react';
-import { SiTiktok, SiInstagram, SiPinterest, SiX, SiFacebook, SiYoutube } from 'react-icons/si';
+import { SiTiktok, SiInstagram, SiPinterest, SiX, SiFacebook } from 'react-icons/si';
 import { Navbar } from '@/components/ui/Navbar';
 import { Footer } from '@/components/ui/Footer';
 import { Oxi } from '@/components/ui/Oxi';
@@ -86,8 +86,6 @@ export function RecentsContent() {
         return <SiPinterest className="w-3.5 h-3.5 shrink-0" />;
       case 'x':
         return <SiX className="w-3.5 h-3.5 shrink-0" />;
-      case 'youtube':
-        return <SiYoutube className="w-3.5 h-3.5 shrink-0" />;
       default:
         return <History className="w-3.5 h-3.5 shrink-0" />;
     }

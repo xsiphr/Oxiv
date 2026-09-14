@@ -27,7 +27,7 @@ async function handleExtraction(url: string, lookup: LookupResult): Promise<Next
     );
   }
 
-  // Tier 2B: Recognized platform with NO immediate support roadmap (YouTube, Reddit, etc.)
+  // Tier 2B: Recognized platform with NO immediate support roadmap (Reddit, Snapchat, etc.)
   if (lookup.status === 'unsupported' && lookup.platform) {
     return NextResponse.json(
       {
@@ -209,7 +209,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       status: 'active',
       service: 'Oxiv Media Extraction Engine',
       supportedLive: ['tiktok', 'instagram', 'pinterest', 'facebook', 'x'],
-      pipelinePending: ['youtube'],
+      pipelinePending: [],
       usage: 'POST /api/extract with { url } or GET /api/extract?url=...',
     });
   }
