@@ -37,6 +37,9 @@ interface PinterestPinData {
   grid_title?: string;
   title?: string;
   description?: string;
+  link?: string;
+  domain?: string;
+  is_carousel?: boolean;
   is_video?: boolean;
   is_animated?: boolean;
   pinner?: {
@@ -535,6 +538,81 @@ function resolvePinDescription(pin: PinterestPinData, resolvedTitle: string): st
 }
 
 /**
+ * Secondary Provider: Fetch detailed Pin data from Pinterest SSR handshake + PinResource/get/ endpoint.
+ * Performs anonymous handshake: GET /pin/{pinId}/ to extract short-lived csrftoken,
+ * then queries PinResource/get/ with field_set_key: 'detailed' to retrieve full carousel_slots and renditions.
+ */
+export async function fetchPinFromSSR(pinId: string, canonicalUrl?: string): Promise<PinterestPinData | null> {
+  const pinPageUrl = canonicalUrl && canonicalUrl.includes('/pin/')
+    ? canonicalUrl
+    : `https://www.pinterest.com/pin/${pinId}/`;
+
+  let csrfToken = '';
+  try {
+    const pageRes = await fetch(pinPageUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    const setCookie = pageRes.headers.get('set-cookie') || '';
+    const csrfMatch = setCookie.match(/csrftoken=([a-zA-Z0-9]+)/);
+    if (csrfMatch) {
+      csrfToken = csrfMatch[1];
+    }
+  } catch {
+    return null;
+  }
+
+  if (!csrfToken) {
+    return null;
+  }
+
+  try {
+    const resourceUrl = `https://www.pinterest.com/resource/PinResource/get/?source_url=${encodeURIComponent(
+      `/pin/${pinId}/`
+    )}&data=${encodeURIComponent(
+      JSON.stringify({
+        options: {
+          id: pinId,
+          field_set_key: 'detailed',
+        },
+        context: {},
+      })
+    )}`;
+
+    const res = await fetch(resourceUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        Accept: 'application/json, text/javascript, */*, q=0.01',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': csrfToken,
+        Cookie: `csrftoken=${csrfToken}`,
+        'X-Pinterest-AppState': 'active',
+        'X-Pinterest-PWS-Handler': 'www/[username]/[slug].js',
+        Referer: pinPageUrl,
+      },
+      signal: AbortSignal.timeout(9000),
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const json = await res.json();
+    const pinData = json.resource_response?.data as PinterestPinData | undefined;
+    return pinData || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Primary Provider: Extract Pinterest media pin via Pinterest widget API.
  */
 async function fetchFromPinterestWidget(pinId: string, canonicalUrl: string): Promise<MediaResult | null> {
@@ -613,11 +691,52 @@ async function fetchFromPinterestWidget(pinId: string, canonicalUrl: string): Pr
   const username = `@${decodedHandle.replace(/^@+/, '')}`;
 
   // Resolve Title and Description using the robust hierarchy
-  const title = await resolvePinTitle(pin, pinId, name, canonicalUrl);
-  const description = resolvePinDescription(pin, title);
+  let title = await resolvePinTitle(pin, pinId, name, canonicalUrl);
+  let description = resolvePinDescription(pin, title);
 
-  // 1. Try extracting multi-slide carousel / story pin
-  const slides = await extractAllSlides(pin, pinId);
+  // 1. Fast Path: Try extracting multi-slide carousel / story pin from initial widget response
+  let slides = await extractAllSlides(pin, pinId);
+
+  // 2. Smart upgrade trigger: detect if an upgrade to full carousel/multi-clip is needed
+  // Fast path preserved: ordinary single-image pins don't trigger this unless carousel signals exist.
+  const isMultiClipPin = Boolean(
+    (pin.story_pin_data && (pin.story_pin_data.page_count ?? 0) > 1) ||
+    (pin.carousel_data && (pin.carousel_data.carousel_slots?.length ?? 0) > 1)
+  );
+
+  const isCarouselCandidate = Boolean(
+    (pin as any).is_carousel ||
+    pin.carousel_data ||
+    (pin as any).carousel_slots ||
+    isMultiClipPin ||
+    (pin.story_pin_data && (pin.story_pin_data.page_count ?? 0) > 1) ||
+    Boolean((pin.story_pin_data as any)?.pages?.length > 1) ||
+    (pin.link && /instagram\.com\/(?:p|reel)\//i.test(pin.link)) ||
+    /carousel|multi-image|swipe|slides?|slide\s*\d+/i.test(pin.description || '') ||
+    /carousel|multi-image|swipe|slides?|slide\s*\d+/i.test(pin.title || '')
+  );
+
+  let ssrUpgradeAttempted = false;
+  if (isCarouselCandidate && slides.length <= 1) {
+    ssrUpgradeAttempted = true;
+    const ssrPin = await fetchPinFromSSR(pinId, canonicalUrl);
+    if (ssrPin) {
+      const mergedPin: PinterestPinData = {
+        ...pin,
+        ...ssrPin,
+        carousel_data: ssrPin.carousel_data || pin.carousel_data,
+        story_pin_data: ssrPin.story_pin_data || pin.story_pin_data,
+        videos: ssrPin.videos || pin.videos,
+      };
+      const upgradedSlides = await extractAllSlides(mergedPin, pinId);
+      if (upgradedSlides.length > 1) {
+        slides = upgradedSlides;
+        pin = mergedPin;
+        title = await resolvePinTitle(pin, pinId, name, canonicalUrl);
+        description = resolvePinDescription(pin, title);
+      }
+    }
+  }
 
   if (slides.length > 1) {
     const formats: MediaFormat[] = [
@@ -667,7 +786,7 @@ async function fetchFromPinterestWidget(pinId: string, canonicalUrl: string): Pr
     };
   }
 
-  // 2. Single item fallback from root media (Video takes strict priority over static images)
+  // 3. Single item fallback from root media (Video takes strict priority over static images)
   const singleVideo =
     selectTallestMediaFile(pin.videos?.video_list) ||
     (slides.length === 1 && slides[0].type === 'video' ? { url: slides[0].url } : null);
@@ -687,22 +806,20 @@ async function fetchFromPinterestWidget(pinId: string, canonicalUrl: string): Pr
     ? formatDuration(pinVideoDurationMs / 1000)
     : undefined;
 
-  const isMultiClipPin = Boolean(
-    (pin.story_pin_data && (pin.story_pin_data.page_count ?? 0) > 1) ||
-    (pin.carousel_data && (pin.carousel_data.carousel_slots?.length ?? 0) > 1)
-  );
+  // Degraded fallback indicator: only preserved if an upgrade was attempted/flagged but failed
+  const isDegradedFallback = ssrUpgradeAttempted || isMultiClipPin;
 
   if (singleVideo) {
     const realVideoBytes = await getRealContentLength(singleVideo.url);
     const isAnimatedVideo = Boolean(pin.is_animated || (!pinVideoDuration && pin.is_video));
 
-    const videoLabel = isMultiClipPin
+    const videoLabel = isDegradedFallback
       ? 'First Clip Only (Full Clip Set Unavailable)'
       : isAnimatedVideo
       ? 'Animated Video (MP4)'
       : 'Original Video (No Watermark)';
 
-    const videoQuality = isMultiClipPin
+    const videoQuality = isDegradedFallback
       ? 'Source MP4 Clip'
       : isAnimatedVideo
       ? 'Animated Source MP4'
@@ -724,13 +841,13 @@ async function fetchFromPinterestWidget(pinId: string, canonicalUrl: string): Pr
     else if (/\.png(\?|$)/i.test(singleImage.url)) ext = 'PNG';
     else if (/\.webp(\?|$)/i.test(singleImage.url)) ext = 'WEBP';
 
-    const imageLabel = isMultiClipPin
+    const imageLabel = isDegradedFallback
       ? 'Cover Image (Full Carousel Unavailable)'
       : ext === 'GIF'
       ? 'Original Animated GIF'
       : 'Original High-Res Asset';
 
-    const imageQuality = isMultiClipPin
+    const imageQuality = isDegradedFallback
       ? 'Master Cover Frame'
       : ext === 'GIF'
       ? 'Animated Source'
