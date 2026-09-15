@@ -161,6 +161,7 @@ export interface TranslationDictionary {
     zipHint: string;
     notice: string;
     quotedMediaNote: string;
+    truncatedCollectionNote: (extracted: number, total: number) => string;
   };
   recents: {
     title: string;

@@ -44,6 +44,8 @@ export interface MediaResult {
   items?: MediaItem[];
   isCollection?: boolean;
   itemCount?: number;
+  truncated?: boolean;
+  totalAvailable?: number;
   stats?: {
     views?: string;
     likes?: string;

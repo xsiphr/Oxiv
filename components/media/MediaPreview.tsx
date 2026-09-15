@@ -750,6 +750,19 @@ export function MediaPreview({ media, onReset }: MediaPreviewProps) {
                   </div>
                 )}
 
+                {/* Truncated Collection Notice (Serverless Safety Cap) */}
+                {media.truncated && media.totalAvailable && media.totalAvailable > (media.items?.length || 0) && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono bg-amber-500/10 border border-amber-500/20 text-amber-500 select-none">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span>
+                      {t.preview.truncatedCollectionNote(
+                        media.items?.length || media.itemCount || 0,
+                        media.totalAvailable
+                      )}
+                    </span>
+                  </div>
+                )}
+
                 {/* Clean Decoded Title & Description */}
                 <p className="font-body text-xs sm:text-sm text-[var(--colors-body)] leading-relaxed pt-1 whitespace-pre-line">
                   {media.title || media.description}

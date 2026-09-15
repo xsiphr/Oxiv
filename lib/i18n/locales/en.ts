@@ -191,6 +191,8 @@ export const en: TranslationDictionary = {
     zipHint: 'Files are fetched and compressed before saving — progress shown below.',
     notice: 'Direct client-side stream. Files are never stored or logged on intermediary servers.',
     quotedMediaNote: 'Media from quoted post',
+    truncatedCollectionNote: (extracted: number, total: number) =>
+      `Showing first ${extracted} of ${total} pins (serverless safety cap).`,
   },
   recents: {
     title: 'Recent Extractions',

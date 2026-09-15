@@ -191,6 +191,8 @@ export const ar: TranslationDictionary = {
     zipHint: 'يتم جلب الملفات وضغطها محلياً قبل الحفظ — يظهر التقدم أدناه.',
     notice: 'ℹ تتم معالجة التدفقات لحظياً دون تخزين أي ملفات على الخوادم. خالية تماماً من طبقات التتبع.',
     quotedMediaNote: 'وسائط من المنشور المقتبس',
+    truncatedCollectionNote: (extracted: number, total: number) =>
+      `عرض أول ${extracted} من أصل ${total} دبوس (حد الأمان السحابي).`,
   },
   recents: {
     title: 'السجل والعمليات الأخيرة',

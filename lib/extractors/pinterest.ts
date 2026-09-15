@@ -116,18 +116,22 @@ export function extractPinterestId(url: string): string | null {
 }
 
 /**
- * Extracts username and board slug from a canonical Pinterest board URL.
+ * Extracts username, board slug, and optional section slug from a canonical Pinterest board URL.
+ * Supports both 2-segment boards (pinterest.com/{user}/{board}/)
+ * and 3-segment sections (pinterest.com/{user}/{board}/{section}/).
  */
-export function extractPinterestBoardInfo(url: string): { user: string; board: string } | null {
+export function extractPinterestBoardInfo(url: string): { user: string; board: string; section?: string } | null {
   try {
     const cleanUrl = url.trim().replace(/^https?:\/\//, '').replace(/^www\./, '');
     const pathOnly = cleanUrl.split('?')[0].split('#')[0];
     const parts = pathOnly.split('/').filter(Boolean);
 
-    // Format: pinterest.com/{user}/{board} or pinterest.co.uk/{user}/{board} (ignoring api.pinterest.com)
+    // Format: pinterest.com/{user}/{board} or pinterest.com/{user}/{board}/{section}
     if (parts.length >= 3 && parts[0].includes('pinterest.') && !parts[0].startsWith('api.')) {
       const user = parts[1];
       const board = parts[2];
+      const section = parts.length >= 4 ? parts[3] : undefined;
+
       const reserved = [
         'pin',
         'search',
@@ -147,7 +151,7 @@ export function extractPinterestBoardInfo(url: string): { user: string; board: s
         'api',
       ];
       if (!reserved.includes(user.toLowerCase()) && !reserved.includes(board.toLowerCase())) {
-        return { user, board };
+        return { user, board, section };
       }
     }
     return null;
@@ -874,8 +878,360 @@ export async function fetchFromPinterestBoardWidget(user: string, board: string,
 }
 
 /**
+ * Extracts raw original and thumbnail URLs from a Pinterest pin rendition map or image object.
+ */
+function extractPinImageUrls(pin: any): { origUrl: string; thumbUrl: string } {
+  const images = pin?.images || {};
+  const origCandidate = images.orig || images.originals;
+
+  let origUrl = origCandidate?.url || '';
+  let thumbUrl = images['564x']?.url || images['474x']?.url || images['236x']?.url || origUrl;
+
+  if (!origUrl && thumbUrl) {
+    origUrl = thumbUrl.includes('i.pinimg.com') && /\/\d+x\//.test(thumbUrl)
+      ? thumbUrl.replace(/\/\d+x\//, '/originals/')
+      : thumbUrl;
+  }
+
+  // Handle fallback to root image fields if images map was absent
+  if (!origUrl) {
+    origUrl = pin?.image_large_url || pin?.image_medium_url || pin?.image_square_url || '';
+    thumbUrl = pin?.image_medium_url || pin?.image_square_url || origUrl;
+  }
+
+  return { origUrl, thumbUrl };
+}
+
+/**
+ * Robust SSR Board & Section Extractor with GraphQL / Resource pagination beyond the 50-pin limit.
+ * - Extracts CSRF token & board metadata directly from public SSR hydration payload.
+ * - For boards with <= 50 pins (and no section specified), seamlessly preserves the fast widget path.
+ * - For boards > 50 pins or sub-board sections, paginates via BoardFeedResource / BoardSectionPinsResource
+ *   up to the 150-pin serverless safety cap.
+ */
+export async function fetchBoardFromSSR(
+  user: string,
+  board: string,
+  canonicalUrl: string,
+  section?: string
+): Promise<MediaResult> {
+  const parentBoardUrl = `https://www.pinterest.com/${encodeURIComponent(user)}/${encodeURIComponent(board)}/`;
+
+  let pageRes: Response;
+  try {
+    pageRes = await fetch(parentBoardUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(9000),
+    });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Network failure';
+    throw new ExtractionPipelineError('GATEWAY_TIMEOUT', 'Failed to connect to Pinterest board page.', {
+      technicalDetail: `Connection error: ${errorMsg}`,
+      platform: 'pinterest',
+      statusHint: 504,
+    });
+  }
+
+  if (pageRes.status === 404) {
+    throw new ExtractionPipelineError(
+      'MEDIA_UNREACHABLE',
+      `Pinterest board "${user}/${board}" not found. The board may be private, deleted, or the URL is incorrect.`,
+      { platform: 'pinterest', statusHint: 404 }
+    );
+  }
+
+  if (!pageRes.ok) {
+    throw new ExtractionPipelineError(
+      'MEDIA_UNREACHABLE',
+      `Failed to load Pinterest board page (HTTP ${pageRes.status}).`,
+      { platform: 'pinterest', statusHint: 502 }
+    );
+  }
+
+  // Extract short-lived anonymous CSRF token from Set-Cookie header
+  const setCookie = pageRes.headers.get('set-cookie') || '';
+  const csrfMatch = setCookie.match(/csrftoken=([a-zA-Z0-9]+)/);
+  const csrfToken = csrfMatch ? csrfMatch[1] : '';
+
+  const html = await pageRes.text();
+  const scriptMatch = html.match(/<script id="__PWS_INITIAL_PROPS__"[^>]*>([\s\S]*?)<\/script>/);
+
+  if (!scriptMatch) {
+    // If SSR script is missing, attempt fallback to the board widget API
+    return fetchFromPinterestBoardWidget(user, board, canonicalUrl);
+  }
+
+  let initialProps: any = null;
+  try {
+    initialProps = JSON.parse(scriptMatch[1]);
+  } catch {
+    return fetchFromPinterestBoardWidget(user, board, canonicalUrl);
+  }
+
+  const initialReduxState = initialProps?.initialReduxState || {};
+  const boardsMap = initialReduxState?.boards || {};
+  const boardData = Object.values(boardsMap)[0] as any;
+  const boardId = boardData?.id;
+
+  const ownerData = boardData?.owner || {};
+  const rawBoardTitle = boardData?.name ? decodeHtmlEntities(boardData.name) : `${user}'s ${board} Board`;
+  const rawUserName = ownerData?.full_name ? decodeHtmlEntities(ownerData.full_name) : user;
+  const rawUserAbout = boardData?.description
+    ? decodeHtmlEntities(boardData.description)
+    : `Pinterest board curated by @${user}.`;
+  const authorAvatar = ownerData?.image_medium_url || ownerData?.image_small_url;
+
+  // Handle Section if specified
+  let targetSection: any = null;
+  if (section) {
+    const sectionsMap = initialReduxState?.boardsections || {};
+    const normalizedSectionSlug = section.toLowerCase().trim();
+    for (const s of Object.values(sectionsMap) as any[]) {
+      if (
+        s.slug?.toLowerCase() === normalizedSectionSlug ||
+        s.title?.toLowerCase().replace(/\s+/g, '-') === normalizedSectionSlug ||
+        s.id === section
+      ) {
+        targetSection = s;
+        break;
+      }
+    }
+
+    if (!targetSection) {
+      throw new ExtractionPipelineError(
+        'MEDIA_UNREACHABLE',
+        `Pinterest section "${section}" was not found in board "${user}/${board}".`,
+        { platform: 'pinterest', statusHint: 404 }
+      );
+    }
+  }
+
+  // Fast path: if NO section is requested and board has <= 50 pins, use the widget API directly
+  const declaredPinCount = targetSection ? (targetSection.pin_count ?? 0) : (boardData?.pin_count ?? 0);
+  if (!section && declaredPinCount > 0 && declaredPinCount <= 50) {
+    try {
+      return await fetchFromPinterestBoardWidget(user, board, canonicalUrl);
+    } catch {
+      // If widget fails, gracefully continue with SSR extraction below
+    }
+  }
+
+  // Collect initial pins
+  const rawPins: any[] = [];
+  const seenPinIds = new Set<string>();
+
+  function addRawPin(p: any) {
+    if (!p) return;
+    const pinId = String(p.id || '');
+    if (pinId && !seenPinIds.has(pinId)) {
+      seenPinIds.add(pinId);
+      rawPins.push(p);
+    }
+  }
+
+  let nextBookmark: string | null = null;
+  const MAX_SAFETY_CAP = 150;
+
+  if (targetSection) {
+    // Initial pins from section preview_pins if present
+    if (Array.isArray(targetSection.preview_pins)) {
+      for (const p of targetSection.preview_pins) {
+        addRawPin(p);
+      }
+    }
+  } else {
+    // Initial pins from BoardFeedResource
+    const feedResource = initialReduxState?.resources?.BoardFeedResource || {};
+    const feedKey = Object.keys(feedResource)[0];
+    const initialFeed = feedResource[feedKey];
+    if (Array.isArray(initialFeed?.data)) {
+      for (const p of initialFeed.data) {
+        addRawPin(p);
+      }
+    }
+    nextBookmark = initialFeed?.nextBookmark || null;
+  }
+
+  // Pagination loop up to MAX_SAFETY_CAP (150 pins)
+  const isSection = Boolean(targetSection);
+  const resourceEndpoint = isSection
+    ? 'https://www.pinterest.com/resource/BoardSectionPinsResource/get/'
+    : 'https://www.pinterest.com/resource/BoardFeedResource/get/';
+
+  let paginationErrorOccurred = false;
+
+  while (rawPins.length < MAX_SAFETY_CAP && (nextBookmark || (isSection && rawPins.length < declaredPinCount))) {
+    try {
+      const optionsPayload: Record<string, any> = isSection
+        ? {
+            section_id: targetSection.id,
+            isPrefetch: false,
+            field_set_key: 'react_grid_pin',
+            ...(nextBookmark ? { bookmarks: [nextBookmark] } : {}),
+          }
+        : {
+            board_id: boardId,
+            isPrefetch: false,
+            field_set_key: 'react_grid_pin',
+            ...(nextBookmark ? { bookmarks: [nextBookmark] } : {}),
+          };
+
+      const sourceUrl = isSection ? `/${user}/${board}/${targetSection.slug}/` : `/${user}/${board}/`;
+      const params = new URLSearchParams({
+        source_url: sourceUrl,
+        data: JSON.stringify({
+          options: optionsPayload,
+          context: {},
+        }),
+      });
+
+      const reqHeaders: HeadersInit = {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        Accept: 'application/json, text/javascript, */*, q=0.01',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-Pinterest-AppState': 'active',
+        'X-Pinterest-PWS-Handler': 'www/[username]/[slug].js',
+      };
+
+      if (csrfToken) {
+        reqHeaders['X-CSRFToken'] = csrfToken;
+        reqHeaders['Cookie'] = `csrftoken=${csrfToken}`;
+      }
+
+      const res = await fetch(`${resourceEndpoint}?${params.toString()}`, {
+        headers: reqHeaders,
+        signal: AbortSignal.timeout(7000),
+      });
+
+      if (!res.ok) {
+        paginationErrorOccurred = true;
+        break;
+      }
+
+      const resJson = await res.json();
+      const batchData = resJson.resource_response?.data;
+
+      if (!Array.isArray(batchData) || batchData.length === 0) {
+        break;
+      }
+
+      for (const p of batchData) {
+        addRawPin(p);
+        if (rawPins.length >= MAX_SAFETY_CAP) break;
+      }
+
+      const newBookmark = resJson.resource_response?.bookmark;
+      if (!newBookmark || newBookmark === nextBookmark) {
+        break;
+      }
+      nextBookmark = newBookmark;
+    } catch {
+      paginationErrorOccurred = true;
+      break;
+    }
+  }
+
+  // If 0 pins were accumulated and an error occurred, throw appropriate error
+  if (rawPins.length === 0) {
+    throw new ExtractionPipelineError(
+      'MEDIA_UNREACHABLE',
+      `Pinterest ${isSection ? 'section' : 'board'} has no accessible pins or cannot be reached.`,
+      { platform: 'pinterest', statusHint: 404 }
+    );
+  }
+
+  // Slice to hard ceiling
+  const cappedPins = rawPins.slice(0, MAX_SAFETY_CAP);
+
+  // Parallel chunked content length resolution (chunk size 10)
+  const items: MediaItem[] = [];
+  const chunkSize = 10;
+  for (let i = 0; i < cappedPins.length; i += chunkSize) {
+    const chunk = cappedPins.slice(i, i + chunkSize);
+    const chunkResults = await Promise.all(
+      chunk.map(async (p, idx) => {
+        const itemIndex = i + idx + 1;
+        const { origUrl, thumbUrl } = extractPinImageUrls(p);
+        const bytes = origUrl ? await getRealContentLength(origUrl).catch(() => 0) : 0;
+
+        return {
+          id: `pin-item-${p.id || itemIndex}`,
+          type: 'image' as const,
+          url: origUrl || thumbUrl,
+          thumbnail: thumbUrl || origUrl,
+          extension: 'JPG',
+          size: formatBytes(bytes),
+          label: `Photo ${itemIndex}`,
+        };
+      })
+    );
+    items.push(...chunkResults);
+  }
+
+  const effectiveTotal = Math.max(declaredPinCount, rawPins.length);
+  const isTruncated = effectiveTotal > items.length;
+
+  const formats: MediaFormat[] = [];
+  if (items.length >= 2) {
+    formats.push({
+      id: `pin-board-zip-${user}-${board}${section ? `-${section}` : ''}`,
+      type: 'archive',
+      label: `All Photos (${items.length} Images)`,
+      quality: 'Lossless ZIP Package',
+      extension: 'ZIP',
+      size: `${items.length} Files`,
+      downloadUrl: '#zip',
+      isLossless: true,
+    });
+  }
+
+  for (const item of items) {
+    formats.push({
+      id: item.id,
+      type: 'image',
+      label: item.label || 'Original Photo',
+      quality: 'Original Master',
+      extension: 'JPG',
+      size: item.size || 'Direct Stream',
+      downloadUrl: item.url,
+      isLossless: true,
+    });
+  }
+
+  const sectionPrefix = targetSection ? `${decodeHtmlEntities(targetSection.title)} • ` : '';
+  const displayTitle = `${sectionPrefix}${rawBoardTitle} (${items.length} Pins)`;
+
+  return {
+    id: `pin-board-${user}-${board}${section ? `-${section}` : ''}`,
+    originalUrl: canonicalUrl,
+    platform: 'pinterest',
+    title: displayTitle,
+    description: rawUserAbout,
+    author: {
+      name: rawUserName,
+      handle: `@${user}`,
+      avatar: authorAvatar,
+    },
+    thumbnail: items[0]?.thumbnail || items[0]?.url || '',
+    isCollection: items.length >= 2,
+    itemCount: items.length,
+    items,
+    truncated: isTruncated,
+    totalAvailable: effectiveTotal,
+    extractedAt: new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC',
+    formats,
+  };
+}
+
+/**
  * Main Pinterest Extractor function.
- * Resolves short links, extracts Pin ID or Board parameters, queries widget endpoint, and returns authentic MediaResult.
+ * Resolves short links, extracts Pin ID or Board parameters, queries widget or SSR endpoints, and returns authentic MediaResult.
  */
 export async function extractPinterest(url: string): Promise<MediaResult> {
   const cleanUrl = sanitizeUrl(url);
@@ -891,7 +1247,12 @@ export async function extractPinterest(url: string): Promise<MediaResult> {
 
   const boardInfo = extractPinterestBoardInfo(canonicalUrl);
   if (boardInfo) {
-    const boardResult = await fetchFromPinterestBoardWidget(boardInfo.user, boardInfo.board, canonicalUrl);
+    const boardResult = await fetchBoardFromSSR(
+      boardInfo.user,
+      boardInfo.board,
+      canonicalUrl,
+      boardInfo.section
+    );
     if (boardResult && boardResult.formats.length > 0) {
       return boardResult;
     }
@@ -908,8 +1269,12 @@ export async function extractPinterest(url: string): Promise<MediaResult> {
     );
   }
 
-  throw new ExtractionPipelineError('INVALID_URL', 'Unable to parse valid Pinterest Pin ID or Board from URL. Supported formats: pinterest.com/pin/12345/ or pinterest.com/user/board/ or pin.it/...', {
-    platform: 'pinterest',
-    statusHint: 400,
-  });
+  throw new ExtractionPipelineError(
+    'INVALID_URL',
+    'Unable to parse valid Pinterest Pin ID or Board from URL. Supported formats: pinterest.com/pin/12345/ or pinterest.com/user/board/ or pin.it/...',
+    {
+      platform: 'pinterest',
+      statusHint: 400,
+    }
+  );
 }
